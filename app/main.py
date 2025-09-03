@@ -1,62 +1,26 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, EmailStr
-from sqlalchemy import Column, Integer, String, DateTime, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timedelta
-import hashlib
-import secrets
+from fastapi import FastAPI, HTTPException, Depends
+from sqlalchemy.orm import Session
+from .database import get_db, criar_tabelas
+from .schemas import UsuarioCreate, UsuarioResponse
+from . import crud
 
-app = FastAPI()
-DATABASE_URL = "sqlite:///./banco.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+app = FastAPI(title="BackBase API", version="1.0.0")
 
-class Usuario(Base):
-    __tablename__ = "usuarios"
-    id = Column(Integer, primary_key=True, index=True)
-    login = Column(String, nullable=False)
-    senha = Column(String, nullable=False)
-    email = Column(String, unique=True, nullable=False)
-    tag = Column(String, nullable=False, default="cliente")
-    plan = Column(String, nullable=True)
-    plan_date = Column(DateTime, nullable=True)
-    credencial = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+@app.on_event("startup")
+def startup_event():
+    """Executa na inicialização da aplicação"""
+    criar_tabelas()
 
-Base.metadata.create_all(bind=engine)
-
-class UsuarioCreate(BaseModel):
-    login: str
-    senha: str
-    email: EmailStr
-    tag: str = "cliente"
-    plan: str | None = None
-
-def gerar_credencial(email: str, dias: int = 30) -> str:
-    validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
-    raw = f"{email}-{validade}-{secrets.token_hex(16)}"
-    return hashlib.sha256(raw.encode()).hexdigest()
-
-@app.post("/cadastro")
-def cadastrar_usuario(usuario: UsuarioCreate):
-    db = SessionLocal()
+@app.post("/cadastro", response_model=dict)
+def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    """Cadastra um novo usuário"""
     try:
-        credencial = gerar_credencial(usuario.email, dias=30)
-        novo_usuario = Usuario(
-            login=usuario.login,
-            senha=usuario.senha,
-            email=usuario.email,
-            tag=usuario.tag,
-            plan=usuario.plan,
-            plan_date=datetime.utcnow(),
-            credencial=credencial,
-            created_at=datetime.utcnow()
-        )
-        db.add(novo_usuario)
-        db.commit()
-        db.refresh(novo_usuario)
+        # Verifica se email já existe
+        usuario_existente = crud.buscar_usuario_por_email(db, usuario.email)
+        if usuario_existente:
+            raise HTTPException(status_code=400, detail="Email já cadastrado")
+        
+        novo_usuario = crud.criar_usuario(db, usuario)
         return {
             "sucesso": True,
             "id": novo_usuario.id,
@@ -64,29 +28,37 @@ def cadastrar_usuario(usuario: UsuarioCreate):
             "created_at": novo_usuario.created_at
         }
     except Exception as e:
-        db.rollback()
         raise HTTPException(status_code=400, detail=f"Erro ao cadastrar: {str(e)}")
-    finally:
-        db.close()
 
-@app.get("/usuarios")
-def listar_usuarios():
-    db = SessionLocal()
-    usuarios = db.query(Usuario).all()
-    db.close()
-    return [
-        {
-            "id": u.id,
-            "login": u.login,
-            "email": u.email,
-            "tag": u.tag,
-            "plan": u.plan,
-            "plan_date": u.plan_date,
-            "credencial": u.credencial,
-            "created_at": u.created_at
-        }
-        for u in usuarios
-    ]
+@app.get("/usuarios", response_model=list[UsuarioResponse])
+def listar_usuarios(db: Session = Depends(get_db)):
+    """Lista todos os usuários"""
+    usuarios = crud.listar_usuarios(db)
+    return usuarios
+
+@app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+def buscar_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    """Busca um usuário por ID"""
+    usuario = crud.buscar_usuario_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+@app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+def atualizar_usuario(usuario_id: int, dados: dict, db: Session = Depends(get_db)):
+    """Atualiza dados de um usuário"""
+    usuario = crud.atualizar_usuario(db, usuario_id, dados)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
+@app.delete("/usuarios/{usuario_id}")
+def deletar_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    """Deleta um usuário"""
+    usuario = crud.deletar_usuario(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
 
 def main():
     print("FastAPI app configurado com sucesso!")
