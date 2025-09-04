@@ -1,15 +1,52 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import get_db, criar_tabelas
 from .schemas import UsuarioCreate, UsuarioResponse
 from . import crud
 
-app = FastAPI(title="BackBase API", version="1.0.0")
+app = FastAPI(
+    title="BackBase API", 
+    version="1.0.0",
+    description="API para gerenciamento de usuários",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Configuração CORS para produção
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Em produção, especifique domínios específicos
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def startup_event():
     """Executa na inicialização da aplicação"""
     criar_tabelas()
+
+# Rota raiz para health check
+@app.get("/")
+def root():
+    """Endpoint raiz da API"""
+    return {
+        "message": "BackBase API está funcionando!",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "redoc": "/redoc"
+    }
+
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    """Health check da API"""
+    return {
+        "status": "healthy",
+        "message": "API está funcionando corretamente"
+    }
 
 @app.post("/cadastro", response_model=dict)
 def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
@@ -25,40 +62,61 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
             "sucesso": True,
             "id": novo_usuario.id,
             "credencial": novo_usuario.credencial,
-            "created_at": novo_usuario.created_at
+            "created_at": novo_usuario.created_at,
+            "message": "Usuário criado com sucesso"
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Erro ao cadastrar: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
 @app.get("/usuarios", response_model=list[UsuarioResponse])
 def listar_usuarios(db: Session = Depends(get_db)):
     """Lista todos os usuários"""
-    usuarios = crud.listar_usuarios(db)
-    return usuarios
+    try:
+        usuarios = crud.listar_usuarios(db)
+        return usuarios
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
 
 @app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
 def buscar_usuario(usuario_id: int, db: Session = Depends(get_db)):
     """Busca um usuário por ID"""
-    usuario = crud.buscar_usuario_por_id(db, usuario_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return usuario
+    try:
+        usuario = crud.buscar_usuario_por_id(db, usuario_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return usuario
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
 def atualizar_usuario(usuario_id: int, dados: dict, db: Session = Depends(get_db)):
     """Atualiza dados de um usuário"""
-    usuario = crud.atualizar_usuario(db, usuario_id, dados)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return usuario
+    try:
+        usuario = crud.atualizar_usuario(db, usuario_id, dados)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return usuario
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
 
 @app.delete("/usuarios/{usuario_id}")
 def deletar_usuario(usuario_id: int, db: Session = Depends(get_db)):
     """Deleta um usuário"""
-    usuario = crud.deletar_usuario(db, usuario_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
+    try:
+        usuario = crud.deletar_usuario(db, usuario_id)
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+        return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
 def main():
     print("FastAPI app configurado com sucesso!")
