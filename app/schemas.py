@@ -9,6 +9,10 @@ class UsuarioCreate(BaseModel):
     tag: str = "cliente"
     plan: Optional[str] = None
 
+class LoginRequest(BaseModel):
+    email_ou_login: str
+    senha: str
+
 class UsuarioResponse(BaseModel):
     id: int
     login: str

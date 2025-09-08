@@ -213,3 +213,5 @@ A API retorna erros detalhados com códigos HTTP apropriados:
 ## 📝 Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+start local - uvicorn app.main:app --reload --host 0.0.0.0 --port 8000

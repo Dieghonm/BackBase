@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from .database import get_db, criar_tabelas
-from .schemas import UsuarioCreate, UsuarioResponse
+from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest
 from . import crud
 
 app = FastAPI(
@@ -57,6 +57,11 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         if usuario_existente:
             raise HTTPException(status_code=400, detail="Email já cadastrado")
         
+        # Verifica se login já existe
+        usuario_login_existente = crud.buscar_usuario_por_login(db, usuario.login)
+        if usuario_login_existente:
+            raise HTTPException(status_code=400, detail="Login já está em uso")
+        
         novo_usuario = crud.criar_usuario(db, usuario)
         return {
             "sucesso": True,
@@ -69,6 +74,36 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
+@app.post("/login", response_model=dict)
+def fazer_login(dados_login: LoginRequest, db: Session = Depends(get_db)):
+    """Realiza login do usuário"""
+    try:
+        # Busca usuário por email ou login
+        usuario = crud.buscar_usuario_por_email(db, dados_login.email_ou_login)
+        if not usuario:
+            usuario = crud.buscar_usuario_por_login(db, dados_login.email_ou_login)
+        
+        if not usuario:
+            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+        
+        # Verifica senha (em produção, use hash)
+        if usuario.senha != dados_login.senha:
+            raise HTTPException(status_code=401, detail="Senha incorreta")
+        
+        return {
+            "sucesso": True,
+            "id": usuario.id,
+            "login": usuario.login,
+            "email": usuario.email,
+            "tag": usuario.tag,
+            "credencial": usuario.credencial,
+            "message": "Login realizado com sucesso"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao fazer login: {str(e)}")
 
 @app.get("/usuarios", response_model=list[UsuarioResponse])
 def listar_usuarios(db: Session = Depends(get_db)):

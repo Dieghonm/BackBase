@@ -41,6 +41,10 @@ def buscar_usuario_por_email(db: Session, email: str):
     """Busca usuário por email"""
     return db.query(Usuario).filter(Usuario.email == email).first()
 
+def buscar_usuario_por_login(db: Session, login: str):
+    """Busca usuário por login"""
+    return db.query(Usuario).filter(Usuario.login == login).first()
+
 def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
     """Atualiza dados de um usuário"""
     db_usuario = db.query(Usuario).filter(Usuario.id == usuario_id).first()
