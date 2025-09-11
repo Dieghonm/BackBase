@@ -214,14 +214,22 @@ A API retorna erros detalhados com códigos HTTP apropriados:
 
 Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
 
+
+
+# Guia de Execução do Projeto BackBase (FastAPI)
+```bash
 git clone git@github.com:Dieghonm/BackBase.git
-python -m venv venv 
+cd BackBase
+python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt 
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Executar a aplicação
+```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-
-git add .
-git commit -m "" 
-git push -u origin main 
-git push duo main
+Encerrar o servidor
+Pressione CTRL + C para parar a execução.
