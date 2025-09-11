@@ -3,15 +3,17 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from datetime import datetime
+from .config import settings  # Importar settings
 
-DATABASE_URL = "sqlite:///./banco.db"
+# Usar a variável do .env
+DATABASE_URL = settings.database_url
 
 usuarios_iniciais = [
     {"login": "dieghonm", "email": "dieghonm@gmail.com", "tag": "admin"},
     {"login": "cavamaga", "email": "cava.maga@gmail.com", "tag": "admin"},
     {"login": "tiaguetevital", "email": "tiagovital999@gmail.com", "tag": "admin"},
     {"login": "Pietro", "email": "tester@gmail.com", "tag": "tester"},
-    ]
+]
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -26,6 +28,10 @@ def criar_tabelas():
     
     Base.metadata.create_all(bind=engine)
     print("Tabelas criadas/verificadas com sucesso!")
+    print(f"🔧 Configurações carregadas do .env:")
+    print(f"   - Database: {settings.database_url}")
+    print(f"   - Debug Mode: {settings.debug}")
+    print(f"   - API Version: {settings.api_version}")
 
     # Import dentro da função para evitar circular import
     from .models import Usuario

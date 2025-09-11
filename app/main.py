@@ -5,10 +5,12 @@ from .database import get_db, criar_tabelas
 from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest
 from . import crud
 from pydantic import BaseModel
+from .config import settings 
 
 app = FastAPI(
     title="BackBase API", 
-    version="1.0.0",
+    # version="1.0.0",
+    version=settings.api_version,
     description="API para gerenciamento de usuários com autenticação segura",
     docs_url="/docs",
     redoc_url="/redoc"
