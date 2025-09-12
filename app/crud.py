@@ -3,14 +3,10 @@ from .models import Usuario
 from .schemas import UsuarioCreate
 from .utils.security import hash_password, verify_password
 from datetime import datetime, timedelta
-import hashlib
-import secrets
+from .utils.jwt_auth import (
+gerar_credencial
+)
 
-def gerar_credencial(email: str, dias: int = 30) -> str:
-    """Gera uma credencial única para o usuário"""
-    validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
-    raw = f"{email}-{validade}-{secrets.token_hex(16)}"
-    return hashlib.sha256(raw.encode()).hexdigest()
 
 def criar_usuario(db: Session, usuario: UsuarioCreate):
     """Cria um novo usuário no banco com senha criptografada"""

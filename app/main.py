@@ -1,20 +1,29 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from .database import get_db, criar_tabelas
-from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest
+from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
+from .utils.jwt_auth import (
+    create_access_token, 
+    verify_token, 
+    get_user_from_token,
+    create_user_token_data,
+    hash_password,
+    verify_password
+)
 from . import crud
-from pydantic import BaseModel
-from .config import settings 
 
 app = FastAPI(
     title="BackBase API", 
-    # version="1.0.0",
-    version=settings.api_version,
-    description="API para gerenciamento de usuários com autenticação segura",
+    version="1.0.0",
+    description="API para gerenciamento de usuários com JWT Authentication",
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Security scheme para JWT
+security = HTTPBearer()
 
 # Configuração CORS para produção
 app.add_middleware(
@@ -25,15 +34,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Schema para alteração de senha
-class AlterarSenhaRequest(BaseModel):
-    senha_atual: str
-    senha_nova: str
-
 @app.on_event("startup")
 def startup_event():
     """Executa na inicialização da aplicação"""
     criar_tabelas()
+
+# Dependency para verificar token JWT
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Dependency para verificar JWT e retornar usuário atual
+    """
+    token = credentials.credentials
+    user_data = get_user_from_token(token)
+    return user_data
 
 # Rota raiz para health check
 @app.get("/")
@@ -45,7 +58,7 @@ def root():
         "version": "1.0.0",
         "docs": "/docs",
         "redoc": "/redoc",
-        "security": "Senhas criptografadas com bcrypt"
+        "features": ["JWT Authentication", "User Management"]
     }
 
 # Health check endpoint
@@ -54,13 +67,12 @@ def health_check():
     """Health check da API"""
     return {
         "status": "healthy",
-        "message": "API está funcionando corretamente",
-        "security": "✓ Criptografia ativa"
+        "message": "API está funcionando corretamente"
     }
 
 @app.post("/cadastro", response_model=dict)
 def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    """Cadastra um novo usuário com senha criptografada"""
+    """Cadastra um novo usuário"""
     try:
         # Verifica se email já existe
         usuario_existente = crud.buscar_usuario_por_email(db, usuario.email)
@@ -72,100 +84,122 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
         if usuario_login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
+        # Hash da senha antes de salvar
+        usuario.senha = hash_password(usuario.senha)
+        
         novo_usuario = crud.criar_usuario(db, usuario)
         return {
             "sucesso": True,
             "id": novo_usuario.id,
-            "login": novo_usuario.login,
-            "email": novo_usuario.email,
             "credencial": novo_usuario.credencial,
             "created_at": novo_usuario.created_at,
-            "message": "Usuário criado com sucesso (senha criptografada)"
+            "message": "Usuário criado com sucesso"
         }
     except HTTPException:
         raise
-    except ValueError as e:
-        # Erros de validação do Pydantic
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
-@app.post("/login", response_model=dict)
+@app.post("/login", response_model=TokenResponse)
 def fazer_login(dados_login: LoginRequest, db: Session = Depends(get_db)):
-    """Realiza login do usuário com verificação segura da senha"""
+    """Realiza login do usuário e retorna JWT"""
     try:
-        # Autentica o usuário usando a nova função segura
-        usuario = crud.autenticar_usuario(db, dados_login.email_ou_login, dados_login.senha)
+        # Busca usuário por email ou login
+        usuario = crud.buscar_usuario_por_email(db, dados_login.email_ou_login)
+        if not usuario:
+            usuario = crud.buscar_usuario_por_login(db, dados_login.email_ou_login)
         
         if not usuario:
             raise HTTPException(
-                status_code=401, 
-                detail="Email/login ou senha incorretos"
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuário não encontrado"
             )
         
-        return {
-            "sucesso": True,
-            "id": usuario.id,
-            "login": usuario.login,
-            "email": usuario.email,
-            "tag": usuario.tag,
-            "plan": usuario.plan,
-            "credencial": usuario.credencial,
-            "message": "Login realizado com sucesso"
-        }
+        # Verifica senha
+        if not verify_password(dados_login.senha, usuario.senha):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Senha incorreta"
+            )
+        
+        # Cria dados do token
+        token_data = create_user_token_data(
+            user_id=usuario.id,
+            email=usuario.email,
+            login=usuario.login,
+            tag=usuario.tag
+        )
+        
+        # Gera JWT
+        access_token = create_access_token(data=token_data)
+        
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            expires_in=1800,  # 30 minutos
+            user={
+                "id": usuario.id,
+                "login": usuario.login,
+                "email": usuario.email,
+                "tag": usuario.tag,
+                "credencial": usuario.credencial
+            }
+        )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao fazer login: {str(e)}")
 
-@app.post("/alterar-senha/{usuario_id}")
-def alterar_senha(
-    usuario_id: int, 
-    dados: AlterarSenhaRequest, 
-    db: Session = Depends(get_db)
-):
-    """Altera a senha de um usuário após verificar a senha atual"""
+@app.get("/me")
+def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Retorna informações do usuário autenticado"""
     try:
-        # Valida a nova senha
-        from .utils.security import is_password_strong
-        is_strong, errors = is_password_strong(dados.senha_nova)
-        if not is_strong:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Nova senha não atende aos critérios: {'; '.join(errors)}"
-            )
-        
-        # Tenta alterar a senha
-        sucesso = crud.alterar_senha(db, usuario_id, dados.senha_atual, dados.senha_nova)
-        
-        if not sucesso:
-            raise HTTPException(
-                status_code=400, 
-                detail="Usuário não encontrado ou senha atual incorreta"
-            )
+        usuario = crud.buscar_usuario_por_id(db, current_user["user_id"])
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
         return {
-            "sucesso": True,
-            "message": "Senha alterada com sucesso"
+            "id": usuario.id,
+            "login": usuario.login,
+            "email": usuario.email,
+            "tag": usuario.tag,
+            "plan": usuario.plan,
+            "created_at": usuario.created_at
         }
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao alterar senha: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.get("/usuarios", response_model=list[UsuarioResponse])
-def listar_usuarios(db: Session = Depends(get_db)):
-    """Lista todos os usuários (sem mostrar senhas)"""
+def listar_usuarios(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Lista todos os usuários (requer autenticação)"""
     try:
+        # Verifica se usuário tem permissão (admin)
+        if current_user["tag"] not in ["admin", "tester"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: apenas admins podem listar usuários"
+            )
+        
         usuarios = crud.listar_usuarios(db)
         return usuarios
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
 
 @app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def buscar_usuario(usuario_id: int, db: Session = Depends(get_db)):
-    """Busca um usuário por ID (sem mostrar senha)"""
+def buscar_usuario(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Busca um usuário por ID (requer autenticação)"""
     try:
+        # Permite ver próprios dados ou se for admin
+        if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin", "tester"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: você só pode ver seus próprios dados"
+            )
+        
         usuario = crud.buscar_usuario_por_id(db, usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -176,18 +210,19 @@ def buscar_usuario(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def atualizar_usuario(usuario_id: int, dados: dict, db: Session = Depends(get_db)):
-    """Atualiza dados de um usuário (senha será criptografada se fornecida)"""
+def atualizar_usuario(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Atualiza dados de um usuário (requer autenticação)"""
     try:
-        # Se senha está sendo atualizada, valida ela
-        if 'senha' in dados:
-            from .utils.security import is_password_strong
-            is_strong, errors = is_password_strong(dados['senha'])
-            if not is_strong:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Senha não atende aos critérios: {'; '.join(errors)}"
-                )
+        # Permite atualizar próprios dados ou se for admin
+        if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin"]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: você só pode atualizar seus próprios dados"
+            )
+        
+        # Se for uma senha, faz hash
+        if "senha" in dados:
+            dados["senha"] = hash_password(dados["senha"])
         
         usuario = crud.atualizar_usuario(db, usuario_id, dados)
         if not usuario:
@@ -199,9 +234,16 @@ def atualizar_usuario(usuario_id: int, dados: dict, db: Session = Depends(get_db
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
 
 @app.delete("/usuarios/{usuario_id}")
-def deletar_usuario(usuario_id: int, db: Session = Depends(get_db)):
-    """Deleta um usuário"""
+def deletar_usuario(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Deleta um usuário (apenas admins)"""
     try:
+        # Apenas admins podem deletar usuários
+        if current_user["tag"] != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: apenas admins podem deletar usuários"
+            )
+        
         usuario = crud.deletar_usuario(db, usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -212,4 +254,4 @@ def deletar_usuario(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
 def main():
-    print("FastAPI app configurado com segurança de senhas!")
+    print("FastAPI app configurado com sucesso!")

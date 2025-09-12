@@ -5,14 +5,14 @@
 ## 🔥 **PRIORIDADE MÁXIMA (Implementar AGORA)**
 
 ### **Checkpoint 1: Variáveis de Ambiente**
-- [ ] Criar arquivo `.env` na raiz do projeto
-- [ ] Instalar `python-dotenv` no requirements.txt
-- [ ] Criar `app/config.py` com classe Settings
-- [ ] Mover `DATABASE_URL` para .env
-- [ ] Adicionar `SECRET_KEY` para JWT
-- [ ] Adicionar `.env` no .gitignore
-- [ ] Testar se variáveis estão carregando corretamente
-- [ ] **✅ Checkpoint 1 Concluído**
+- [x] Criar arquivo `.env` na raiz do projeto
+- [x] Instalar `python-dotenv` no requirements.txt
+- [x] Criar `app/config.py` com classe Settings
+- [x] Mover `DATABASE_URL` para .env
+- [x] Adicionar `SECRET_KEY` para JWT
+- [x] Adicionar `.env` no .gitignore
+- [x] Testar se variáveis estão carregando corretamente
+- [x] **✅ Checkpoint 1 Concluído**
 
 ### **Checkpoint 2: JWT Authentication**
 - [ ] Instalar `python-jose` no requirements.txt

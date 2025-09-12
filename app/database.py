@@ -4,15 +4,16 @@ from sqlalchemy.orm import sessionmaker
 import os
 from datetime import datetime
 from .config import settings  # Importar settings
+from .utils.jwt_auth import hash_password, gerar_credencial
 
 # Usar a variável do .env
 DATABASE_URL = settings.database_url
 
 usuarios_iniciais = [
-    {"login": "dieghonm", "email": "dieghonm@gmail.com", "tag": "admin"},
-    {"login": "cavamaga", "email": "cava.maga@gmail.com", "tag": "admin"},
-    {"login": "tiaguetevital", "email": "tiagovital999@gmail.com", "tag": "admin"},
-    {"login": "Pietro", "email": "tester@gmail.com", "tag": "tester"},
+    {"login": "dieghonm", "email": "dieghonm@gmail.com", "tag": "admin", "senha": "Admin123@"},
+    {"login": "cavamaga", "email": "cava.maga@gmail.com", "tag": "admin", "senha": "Admin123@"},
+    {"login": "tiaguetevital", "email": "tiagovital999@gmail.com", "tag": "admin", "senha": "Admin123@"},
+    {"login": "Pietro", "email": "tester@gmail.com", "tag": "tester", "senha": "Tester123@"},
 ]
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -40,13 +41,19 @@ def criar_tabelas():
 
     for u in usuarios_iniciais:
         if not db.query(Usuario).filter_by(email=u["email"]).first():
+            senha_hashada = hash_password(u["senha"])
+            credencial = gerar_credencial(u["email"], dias=365)
+            
+            
             usuario = Usuario(
                 login=u["login"],
                 email=u["email"],
                 tag=u["tag"],
-                senha="Teste123@",   # valor padrão só para criação inicial
-                plan="admin",        # valor padrão só para criação inicial
-                plan_date=datetime.utcnow()
+                senha=senha_hashada,
+                plan="admin",
+                plan_date=datetime.utcnow(),
+                credencial=credencial,
+                created_at=datetime.utcnow()
             )
             db.add(usuario)
 
