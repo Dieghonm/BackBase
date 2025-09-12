@@ -40,3 +40,4 @@ class TokenData(BaseModel):
     email: Optional[str] = None
     login: Optional[str] = None
     tag: Optional[str] = None
+    
