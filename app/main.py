@@ -1,9 +1,15 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from .database import get_db, criar_tabelas
 from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
+from .config import settings
 from .utils.jwt_auth import (
     create_access_token, 
     verify_token, 
@@ -14,13 +20,20 @@ from .utils.jwt_auth import (
 )
 from . import crud
 
+# ✨ CONFIGURAÇÃO RATE LIMITING
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="BackBase API", 
     version="1.0.0",
-    description="API para gerenciamento de usuários com JWT Authentication",
+    description="API para gerenciamento de usuários com JWT Authentication e Rate Limiting",
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# ✨ MIDDLEWARE RATE LIMITING
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Security scheme para JWT
 security = HTTPBearer()
@@ -28,16 +41,36 @@ security = HTTPBearer()
 # Configuração CORS para produção
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=settings.cors_origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ✨ HANDLER PERSONALIZADO PARA RATE LIMIT
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Handler personalizado para rate limiting"""
+    response = JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={
+            "error": "Rate limit exceeded",
+            "message": f"Muitas tentativas. Tente novamente em {exc.retry_after} segundos.",
+            "retry_after": exc.retry_after,
+            "limit": str(exc.detail).split(" ")[0] if hasattr(exc, 'detail') else "N/A",
+            "endpoint": str(request.url.path)
+        }
+    )
+    response.headers["Retry-After"] = str(exc.retry_after)
+    return response
+
 @app.on_event("startup")
 def startup_event():
     """Executa na inicialização da aplicação"""
     criar_tabelas()
+    print("🚦 Rate Limiting configurado:")
+    print(f"   - Login: {settings.rate_limit_login}")
+    print(f"   - Cadastro: {settings.rate_limit_cadastro}")
 
 # Dependency para verificar token JWT
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -58,7 +91,11 @@ def root():
         "version": "1.0.0",
         "docs": "/docs",
         "redoc": "/redoc",
-        "features": ["JWT Authentication", "User Management"]
+        "features": ["JWT Authentication", "User Management", "Rate Limiting"],
+        "rate_limits": {
+            "login": settings.rate_limit_login,
+            "cadastro": settings.rate_limit_cadastro
+        }
     }
 
 # Health check endpoint
@@ -67,12 +104,15 @@ def health_check():
     """Health check da API"""
     return {
         "status": "healthy",
-        "message": "API está funcionando corretamente"
+        "message": "API está funcionando corretamente",
+        "rate_limiting": "ativo"
     }
 
+# ✨ ENDPOINT COM RATE LIMIT
 @app.post("/cadastro", response_model=dict)
-def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    """Cadastra um novo usuário"""
+@limiter.limit(settings.rate_limit_cadastro)  # 3/minuto conforme config
+def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    """Cadastra um novo usuário (Rate Limit: 3 tentativas por minuto)"""
     try:
         # Verifica se email já existe
         usuario_existente = crud.buscar_usuario_por_email(db, usuario.email)
@@ -100,9 +140,11 @@ def cadastrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+# ✨ ENDPOINT COM RATE LIMIT
 @app.post("/login", response_model=TokenResponse)
-def fazer_login(dados_login: LoginRequest, db: Session = Depends(get_db)):
-    """Realiza login do usuário e retorna JWT"""
+@limiter.limit(settings.rate_limit_login)  # 5/minuto conforme config
+def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
+    """Realiza login do usuário e retorna JWT (Rate Limit: 5 tentativas por minuto)"""
     try:
         # Busca usuário por email ou login
         usuario = crud.buscar_usuario_por_email(db, dados_login.email_ou_login)
@@ -253,5 +295,21 @@ def deletar_usuario(usuario_id: int, current_user: dict = Depends(get_current_us
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
+# ✨ ENDPOINT PARA VERIFICAR STATUS DO RATE LIMITING
+@app.get("/rate-limit-status")
+def get_rate_limit_status(request: Request):
+    """Endpoint para verificar status atual do rate limiting"""
+    client_ip = get_remote_address(request)
+    return {
+        "client_ip": client_ip,
+        "rate_limits": {
+            "login": settings.rate_limit_login,
+            "cadastro": settings.rate_limit_cadastro
+        },
+        "message": "Rate limiting está ativo",
+        "info": "As limitações se aplicam por IP address"
+    }
+
 def main():
     print("FastAPI app configurado com sucesso!")
+    print("✅ Rate Limiting ativo!")
