@@ -10,13 +10,13 @@ gerar_credencial
 
 def criar_usuario(db: Session, usuario: UsuarioCreate):
     """Cria um novo usuário no banco com senha criptografada"""
-    # Criptografa a senha antes de salvar
-    senha_hash = hash_password(usuario.senha)
+    # ✅ CORREÇÃO: Não faz hash aqui, pois já vem hashada do main.py
+    # senha_hash = hash_password(usuario.senha)  # ❌ REMOVER ESTA LINHA
     
     credencial = gerar_credencial(usuario.email, dias=30)
     db_usuario = Usuario(
         login=usuario.login,
-        senha=senha_hash,
+        senha=usuario.senha,  # ✅ Usa a senha que já vem hashada
         email=usuario.email,
         tag=usuario.tag,
         plan=usuario.plan,
