@@ -15,14 +15,14 @@
 - [x] **✅ Checkpoint 1 Concluído**
 
 ### **Checkpoint 2: JWT Authentication**
-- [ ] Instalar `python-jose` no requirements.txt
-- [ ] Criar `app/utils/jwt_auth.py`
-- [ ] Implementar `create_access_token()`
-- [ ] Implementar `verify_token()`
-- [ ] Modificar endpoint `/login` para retornar JWT
-- [ ] Criar schema `TokenResponse` 
-- [ ] Testar geração e validação de token
-- [ ] **✅ Checkpoint 2 Concluído**
+- [x] Instalar `python-jose` no requirements.txt
+- [x] Criar `app/utils/jwt_auth.py`
+- [x] Implementar `create_access_token()`
+- [x] Implementar `verify_token()`
+- [x] Modificar endpoint `/login` para retornar JWT
+- [x] Criar schema `TokenResponse` 
+- [x] Testar geração e validação de token
+- [x] **✅ Checkpoint 2 Concluído**
 
 ### **Checkpoint 3: Rate Limiting**
 - [ ] Instalar `slowapi` no requirements.txt

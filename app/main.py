@@ -28,7 +28,7 @@ security = HTTPBearer()
 # Configuração CORS para produção
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Em produção, especifique domínios específicos
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
