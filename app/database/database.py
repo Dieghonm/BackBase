@@ -3,8 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from datetime import datetime
-from .config import settings  # Importar settings
-from .utils.jwt_auth import hash_password, gerar_credencial
+from ..core.config import settings  # Importar settings
+from ..utils.jwt_auth import hash_password, gerar_credencial
 
 # Usar a variável do .env
 DATABASE_URL = settings.database_url
@@ -35,7 +35,7 @@ def criar_tabelas():
     print(f"   - API Version: {settings.api_version}")
 
     # Import dentro da função para evitar circular import
-    from .models import Usuario
+    from ..models.models import Usuario
 
     db = SessionLocal()
 

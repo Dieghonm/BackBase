@@ -7,9 +7,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from .database import get_db, criar_tabelas
-from .schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
-from .config import settings
+from .database.database import get_db, criar_tabelas
+from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
+from .core.config import settings
 from .utils.jwt_auth import (
     create_access_token, 
     verify_token, 
@@ -18,7 +18,7 @@ from .utils.jwt_auth import (
     hash_password,
     verify_password
 )
-from . import crud
+from .services import crud
 
 # ✨ CONFIGURAÇÃO RATE LIMITING
 limiter = Limiter(key_func=get_remote_address)

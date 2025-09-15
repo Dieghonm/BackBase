@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from .models import Usuario
-from .schemas import UsuarioCreate
-from .utils.security import hash_password, verify_password
+from ..models.models import Usuario
+from ..schemas.schemas import UsuarioCreate
+from ..utils.security import hash_password, verify_password
 from datetime import datetime, timedelta
-from .utils.jwt_auth import (
+from ..utils.jwt_auth import (
 gerar_credencial
 )
 
@@ -106,7 +106,7 @@ def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: st
     Returns:
         True se a senha foi alterada com sucesso, False caso contrário
     """
-    from .utils.security import verify_password, hash_password
+    from ..utils.security import verify_password, hash_password
     
     usuario = buscar_usuario_por_id(db, usuario_id)
     if not usuario:
