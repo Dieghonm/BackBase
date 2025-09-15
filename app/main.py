@@ -7,7 +7,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from .database.migrations import get_db, criar_tabelas
+from .database import get_db, inicializar_banco
 from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
 from .core.config import settings
 from .utils.jwt_auth import (
@@ -18,7 +18,16 @@ from .utils.jwt_auth import (
     hash_password,
     verify_password
 )
-from .services import crud
+from .services import (
+    criar_usuario,
+    listar_usuarios, 
+    buscar_usuario_por_id,
+    buscar_usuario_por_email,
+    buscar_usuario_por_login,
+    atualizar_usuario,
+    deletar_usuario,
+    autenticar_usuario
+)
 
 # ✨ CONFIGURAÇÃO RATE LIMITING
 limiter = Limiter(key_func=get_remote_address)
@@ -67,7 +76,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @app.on_event("startup")
 def startup_event():
     """Executa na inicialização da aplicação"""
-    criar_tabelas()
+    inicializar_banco()
     print("🚦 Rate Limiting configurado:")
     print(f"   - Login: {settings.rate_limit_login}")
     print(f"   - Cadastro: {settings.rate_limit_cadastro}")
@@ -115,19 +124,19 @@ def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = De
     """Cadastra um novo usuário (Rate Limit: 3 tentativas por minuto)"""
     try:
         # Verifica se email já existe
-        usuario_existente = crud.buscar_usuario_por_email(db, usuario.email)
+        usuario_existente = buscar_usuario_por_email(db, usuario.email)
         if usuario_existente:
             raise HTTPException(status_code=400, detail="Email já cadastrado")
         
         # Verifica se login já existe
-        usuario_login_existente = crud.buscar_usuario_por_login(db, usuario.login)
+        usuario_login_existente = buscar_usuario_por_login(db, usuario.login)
         if usuario_login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
         # Hash da senha antes de salvar
         usuario.senha = hash_password(usuario.senha)
         
-        novo_usuario = crud.criar_usuario(db, usuario)
+        novo_usuario = criar_usuario(db, usuario)
         return {
             "sucesso": True,
             "id": novo_usuario.id,
@@ -147,9 +156,9 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
     """Realiza login do usuário e retorna JWT (Rate Limit: 5 tentativas por minuto)"""
     try:
         # Busca usuário por email ou login
-        usuario = crud.buscar_usuario_por_email(db, dados_login.email_ou_login)
+        usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
         if not usuario:
-            usuario = crud.buscar_usuario_por_login(db, dados_login.email_ou_login)
+            usuario = buscar_usuario_por_login(db, dados_login.email_ou_login)
         
         if not usuario:
             raise HTTPException(
@@ -196,7 +205,7 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
 def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Retorna informações do usuário autenticado"""
     try:
-        usuario = crud.buscar_usuario_por_id(db, current_user["user_id"])
+        usuario = buscar_usuario_por_id(db, current_user["user_id"])
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
@@ -214,7 +223,7 @@ def get_current_user_info(current_user: dict = Depends(get_current_user), db: Se
         raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.get("/usuarios", response_model=list[UsuarioResponse])
-def listar_usuarios(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Lista todos os usuários (requer autenticação)"""
     try:
         # Verifica se usuário tem permissão (admin)
@@ -224,7 +233,7 @@ def listar_usuarios(current_user: dict = Depends(get_current_user), db: Session 
                 detail="Acesso negado: apenas admins podem listar usuários"
             )
         
-        usuarios = crud.listar_usuarios(db)
+        usuarios = listar_usuarios(db)
         return usuarios
     except HTTPException:
         raise
@@ -232,7 +241,7 @@ def listar_usuarios(current_user: dict = Depends(get_current_user), db: Session 
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
 
 @app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def buscar_usuario(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def buscar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Busca um usuário por ID (requer autenticação)"""
     try:
         # Permite ver próprios dados ou se for admin
@@ -242,7 +251,7 @@ def buscar_usuario(usuario_id: int, current_user: dict = Depends(get_current_use
                 detail="Acesso negado: você só pode ver seus próprios dados"
             )
         
-        usuario = crud.buscar_usuario_por_id(db, usuario_id)
+        usuario = buscar_usuario_por_id(db, usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         return usuario
@@ -252,7 +261,7 @@ def buscar_usuario(usuario_id: int, current_user: dict = Depends(get_current_use
         raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def atualizar_usuario(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def atualizar_usuario_endpoint(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Atualiza dados de um usuário (requer autenticação)"""
     try:
         # Permite atualizar próprios dados ou se for admin
@@ -266,7 +275,7 @@ def atualizar_usuario(usuario_id: int, dados: dict, current_user: dict = Depends
         if "senha" in dados:
             dados["senha"] = hash_password(dados["senha"])
         
-        usuario = crud.atualizar_usuario(db, usuario_id, dados)
+        usuario = atualizar_usuario(db, usuario_id, dados)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         return usuario
@@ -276,7 +285,7 @@ def atualizar_usuario(usuario_id: int, dados: dict, current_user: dict = Depends
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
 
 @app.delete("/usuarios/{usuario_id}")
-def deletar_usuario(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def deletar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Deleta um usuário (apenas admins)"""
     try:
         # Apenas admins podem deletar usuários
@@ -286,7 +295,7 @@ def deletar_usuario(usuario_id: int, current_user: dict = Depends(get_current_us
                 detail="Acesso negado: apenas admins podem deletar usuários"
             )
         
-        usuario = crud.deletar_usuario(db, usuario_id)
+        usuario = deletar_usuario(db, usuario_id)
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
