@@ -1,22 +1,16 @@
 from sqlalchemy.orm import Session
 from ..models.user import Usuario
 from ..schemas.schemas import UsuarioCreate
-from ..utils.security import hash_password, verify_password
-from datetime import datetime, timedelta
-from ..utils.jwt_auth import (
-gerar_credencial
-)
-
+from ..utils.security import hash_password
+from datetime import datetime
+from ..utils.jwt_auth import gerar_credencial
 
 def criar_usuario(db: Session, usuario: UsuarioCreate):
     """Cria um novo usuário no banco com senha criptografada"""
-    # ✅ CORREÇÃO: Não faz hash aqui, pois já vem hashada do main.py
-    # senha_hash = hash_password(usuario.senha)  # ❌ REMOVER ESTA LINHA
-    
     credencial = gerar_credencial(usuario.email, dias=30)
     db_usuario = Usuario(
         login=usuario.login,
-        senha=usuario.senha,  # ✅ Usa a senha que já vem hashada
+        senha=usuario.senha,  # Já vem hashada do main.py
         email=usuario.email,
         tag=usuario.tag,
         plan=usuario.plan,
@@ -28,32 +22,6 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
     db.commit()
     db.refresh(db_usuario)
     return db_usuario
-
-def autenticar_usuario(db: Session, email_ou_login: str, senha: str) -> Usuario | None:
-    """
-    Autentica um usuário verificando email/login e senha
-    
-    Args:
-        db: Sessão do banco de dados
-        email_ou_login: Email ou login do usuário
-        senha: Senha em texto plano
-        
-    Returns:
-        Objeto Usuario se autenticação for bem-sucedida, None caso contrário
-    """
-    # Busca usuário por email ou login
-    usuario = buscar_usuario_por_email(db, email_ou_login)
-    if not usuario:
-        usuario = buscar_usuario_por_login(db, email_ou_login)
-    
-    if not usuario:
-        return None
-    
-    # Verifica se a senha está correta
-    if not verify_password(senha, usuario.senha):
-        return None
-    
-    return usuario
 
 def listar_usuarios(db: Session):
     """Lista todos os usuários"""
