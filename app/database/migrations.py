@@ -35,7 +35,7 @@ def criar_tabelas():
     print(f"   - API Version: {settings.api_version}")
 
     # Import dentro da função para evitar circular import
-    from ..models.models import Usuario
+    from ..models.user import Usuario
 
     db = SessionLocal()
 

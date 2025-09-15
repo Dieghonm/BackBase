@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ..models.models import Usuario
+from ..models.user import Usuario
 from ..schemas.schemas import UsuarioCreate
 from ..utils.security import hash_password, verify_password
 from datetime import datetime, timedelta

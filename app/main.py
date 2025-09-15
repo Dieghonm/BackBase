@@ -7,7 +7,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from .database.database import get_db, criar_tabelas
+from .database.migrations import get_db, criar_tabelas
 from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
 from .core.config import settings
 from .utils.jwt_auth import (
