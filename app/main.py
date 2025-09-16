@@ -153,7 +153,7 @@ def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = De
 @app.post("/login", response_model=TokenResponse)
 @limiter.limit(settings.rate_limit_login)  # 5/minuto conforme config
 def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
-    """Realiza login do usuário e retorna JWT (Rate Limit: 5 tentativas por minuto)"""
+    """Realiza login do usuário e retorna JWT (VÁLIDO POR 1 MÊS)"""
     try:
         # Busca usuário por email ou login
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
@@ -181,13 +181,14 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
             tag=usuario.tag
         )
         
-        # Gera JWT
+        # 🔥 Gera JWT COM DURAÇÃO DE 1 MÊS
         access_token = create_access_token(data=token_data)
         
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            expires_in=1800,  # 30 minutos
+            expires_in=2628000,  # 🔥 1 MÊS em segundos
+            token_duration="1_month",
             user={
                 "id": usuario.id,
                 "login": usuario.login,
