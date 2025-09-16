@@ -3,12 +3,11 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
-from datetime import datetime, timedelta
 import hashlib
 import secrets
 
-# Configurações JWT
-SECRET_KEY = "sua-chave-secreta-muito-forte-aqui-mude-em-producao"  # ⚠️ MUDE EM PRODUÇÃO
+# Configurações JWT diretas para evitar import circular
+SECRET_KEY = "dev-super-secret-key-change-in-production-2024"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -33,7 +32,10 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     else:
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
-    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+    to_encode.update({
+        "exp": expire,
+        "iat": now
+    })
     
     try:
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
