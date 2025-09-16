@@ -191,3 +191,4 @@ def gerar_credencial(email: str, dias: int = 365) -> str:  # 🔥 Credencial de 
     validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
     raw = f"{email}-{validade}-{secrets.token_hex(16)}"
     return hashlib.sha256(raw.encode()).hexdigest()
+
