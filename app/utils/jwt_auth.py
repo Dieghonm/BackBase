@@ -35,14 +35,16 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({
-        "exp": expire, 
-        "iat": datetime.utcnow(),
+        "exp": expire.timestamp(),  # 🔧 CORRIGIDO: Usar timestamp() para epoch
+        "iat": datetime.utcnow().timestamp(),  # 🔧 CORRIGIDO: Usar timestamp() para epoch
         "token_duration": "1_month"  # Identificador da duração
     })
     
     try:
         encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
         print(f"🎯 Token criado com expiração: {expire.strftime('%d/%m/%Y %H:%M:%S')} (1 mês)")
+        print(f"🔧 Timestamp de expiração: {expire.timestamp()}")
+        print(f"🔧 Timestamp atual: {datetime.utcnow().timestamp()}")
         return encoded_jwt
     except Exception as e:
         raise HTTPException(
@@ -70,27 +72,42 @@ def verify_token(token: str) -> Dict[str, Any]:
     )
     
     try:
+        # 🔧 CORRIGIDO: Deixar a biblioteca python-jose fazer a validação de expiração
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         
-        # Verifica se token ainda é válido
-        exp = payload.get("exp")
-        if exp and datetime.utcnow().timestamp() > exp:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token expirado (1 mês se passou)",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        # Debug: Mostrar informações do token
+        exp_timestamp = payload.get("exp")
+        current_timestamp = datetime.utcnow().timestamp()
+        
+        print(f"🔧 Debug Token:")
+        print(f"   - Token exp: {exp_timestamp}")
+        print(f"   - Current: {current_timestamp}")
+        print(f"   - Diff: {exp_timestamp - current_timestamp} segundos")
+        
+        if exp_timestamp:
+            exp_datetime = datetime.fromtimestamp(exp_timestamp)
+            current_datetime = datetime.utcnow()
+            print(f"   - Expira em: {exp_datetime}")
+            print(f"   - Agora: {current_datetime}")
+            print(f"   - Tempo restante: {exp_datetime - current_datetime}")
+        
+        # A biblioteca python-jose já faz a verificação de expiração automaticamente
+        # Se chegou até aqui, o token está válido
         
         return payload
+        
     except jwt.ExpiredSignatureError:
+        print("❌ Token realmente expirado")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token expirado (1 mês se passou)",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError:
+    except JWTError as e:
+        print(f"❌ Erro JWT: {e}")
         raise credentials_exception
     except Exception as e:
+        print(f"❌ Erro geral: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao verificar token: {str(e)}"

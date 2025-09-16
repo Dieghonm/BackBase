@@ -76,4 +76,3 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
         errors.append("Senha deve ter pelo menos um caractere especial")
     
     return len(errors) == 0, errors
-
