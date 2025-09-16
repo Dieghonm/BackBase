@@ -49,3 +49,4 @@ def criar_usuarios_iniciais():
         db.rollback()
     finally:
         db.close()
+        
