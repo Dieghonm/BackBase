@@ -22,9 +22,3 @@ def criar_tabelas():
     print(f"   - Database: {settings.database_url}")
     print(f"   - Debug Mode: {settings.debug}")
     print(f"   - API Version: {settings.api_version}")
-    """Dependency para obter sessão do banco"""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
