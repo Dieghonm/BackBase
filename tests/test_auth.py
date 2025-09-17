@@ -11,13 +11,10 @@ class TestAuth:
         password = "MinhaSecretePassword123@"
         hashed = hash_password(password)
         
-        # Verifica se o hash é diferente da senha original
         assert hashed != password
         
-        # Verifica se o hash começa com $2b$ (bcrypt)
         assert hashed.startswith("$2b$")
-        
-        # Verifica se consegue verificar a senha
+
         assert verify_password(password, hashed) is True
         assert verify_password("senha_errada", hashed) is False
 
@@ -32,10 +29,9 @@ class TestAuth:
         
         token = create_access_token(data=data)
         
-        # Verifica se token foi criado
         assert token is not None
         assert isinstance(token, str)
-        assert len(token) > 50  # JWT deve ter tamanho considerável
+        assert len(token) > 50
 
     def test_verify_token_valid(self):
         """Testa verificação de token válido"""
@@ -49,7 +45,6 @@ class TestAuth:
         token = create_access_token(data=data)
         payload = verify_token(token)
         
-        # Verifica se os dados foram recuperados corretamente
         assert payload["user_id"] == 1
         assert payload["email"] == "test@example.com"
         assert payload["login"] == "testuser"
@@ -60,7 +55,7 @@ class TestAuth:
         """Testa verificação de token inválido"""
         invalid_token = "token.invalido.teste"
         
-        with pytest.raises(Exception):  # Deve lançar exceção
+        with pytest.raises(Exception):
             verify_token(invalid_token)
 
 class TestAuthEndpoints:
@@ -81,7 +76,7 @@ class TestAuthEndpoints:
         assert "expires_in" in data
         assert "user" in data
         assert data["token_type"] == "bearer"
-        assert data["expires_in"] == 2628000  # 1 mês em segundos
+        assert data["expires_in"] == 2628000
         assert data["user"]["email"] == sample_user_data["email"]
 
     def test_login_with_login_field(self, client, created_user, sample_user_data):

@@ -34,7 +34,6 @@ class TestUserService:
         assert usuario.plan == "trial"
         assert usuario.credencial is not None
         assert usuario.created_at is not None
-        # Verifica se a senha foi hasheada
         assert usuario.senha != "NovaSenh@123"
         assert usuario.senha.startswith("$2b$")
 
@@ -43,30 +42,30 @@ class TestUserService:
         user_data = UsuarioCreate(
             login="outrouser",
             senha="OutraSenha123@",
-            email=sample_user_data["email"],  # Email já existe
+            email=sample_user_data["email"],
             tag="cliente"
         )
         
-        with pytest.raises(Exception):  # Deve lançar exceção
+        with pytest.raises(Exception):
             criar_usuario(db_session, user_data)
 
     def test_criar_usuario_login_duplicado(self, db_session, created_user, sample_user_data):
         """Testa criação de usuário com login duplicado"""
         user_data = UsuarioCreate(
-            login=sample_user_data["login"],  # Login já existe
+            login=sample_user_data["login"],
             senha="OutraSenha123@",
             email="outro@example.com",
             tag="cliente"
         )
         
-        with pytest.raises(Exception):  # Deve lançar exceção
+        with pytest.raises(Exception):
             criar_usuario(db_session, user_data)
 
     def test_listar_usuarios(self, db_session, created_user, created_admin_user):
         """Testa listagem de usuários"""
         usuarios = listar_usuarios(db_session)
         
-        assert len(usuarios) >= 2  # Pelo menos os 2 criados nas fixtures
+        assert len(usuarios) >= 2
         assert any(u.email == created_user.email for u in usuarios)
         assert any(u.email == created_admin_user.email for u in usuarios)
 
@@ -120,9 +119,9 @@ class TestUserService:
         usuario_atualizado = atualizar_usuario(db_session, created_user.id, novos_dados)
         
         assert usuario_atualizado is not None
-        assert usuario_atualizado.login == "loginatualizado"  # lowercase
+        assert usuario_atualizado.login == "loginatualizado"
         assert usuario_atualizado.tag == "tester"
-        assert usuario_atualizado.email == created_user.email  # Email não mudou
+        assert usuario_atualizado.email == created_user.email 
 
     def test_atualizar_usuario_inexistente(self, db_session):
         """Testa atualização de usuário inexistente"""
@@ -141,7 +140,6 @@ class TestUserService:
         assert usuario_deletado is not None
         assert usuario_deletado.id == user_id
         
-        # Verifica se foi realmente deletado
         usuario_busca = buscar_usuario_por_id(db_session, user_id)
         assert usuario_busca is None
 
@@ -180,7 +178,7 @@ class TestUserEndpoints:
         user_data = {
             "login": "outroLogin",
             "senha": "SenhaSegura123@",
-            "email": created_user.email,  # Email duplicado
+            "email": created_user.email,
             "tag": "cliente"
         }
         
@@ -191,10 +189,9 @@ class TestUserEndpoints:
 
     def test_cadastro_usuario_dados_invalidos(self, client):
         """Testa cadastro com dados inválidos"""
-        # Senha muito curta
         user_data = {
             "login": "test",
-            "senha": "123",  # Muito curta
+            "senha": "123",
             "email": "test@example.com",
             "tag": "cliente"
         }
@@ -202,11 +199,10 @@ class TestUserEndpoints:
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-        # Email inválido
         user_data = {
             "login": "validuser",
             "senha": "ValidPass123@",
-            "email": "email-invalido",  # Email inválido
+            "email": "email-invalido",
             "tag": "cliente"
         }
         
@@ -221,7 +217,7 @@ class TestUserEndpoints:
         
         data = response.json()
         assert isinstance(data, list)
-        assert len(data) >= 2  # Pelo menos os usuários das fixtures
+        assert len(data) >= 2
 
     def test_listar_usuarios_como_usuario_normal(self, client, auth_headers):
         """Testa listagem de usuários como usuário normal (deve falhar)"""
@@ -324,7 +320,7 @@ class TestUserValidation:
     def test_login_validation_minimo_caracteres(self, client):
         """Testa validação de login com poucos caracteres"""
         user_data = {
-            "login": "ab",  # Menos de 3 caracteres
+            "login": "ab",
             "senha": "ValidPass123@",
             "email": "test@example.com",
             "tag": "cliente"
@@ -336,7 +332,7 @@ class TestUserValidation:
     def test_login_validation_caracteres_especiais(self, client):
         """Testa validação de login com caracteres especiais inválidos"""
         user_data = {
-            "login": "user@test",  # Caractere @ não permitido
+            "login": "user@test",
             "senha": "ValidPass123@",
             "email": "test@example.com",
             "tag": "cliente"
@@ -350,7 +346,7 @@ class TestUserValidation:
         user_data = {
             "login": "validuser",
             "senha": "ValidPass123@",
-            "email": "email.invalido",  # Formato inválido
+            "email": "email.invalido",
             "tag": "cliente"
         }
         
@@ -363,7 +359,7 @@ class TestUserValidation:
             "login": "validuser",
             "senha": "ValidPass123@",
             "email": "test@example.com",
-            "tag": "tag_invalida"  # Tag não permitida
+            "tag": "tag_invalida"
         }
         
         response = client.post("/cadastro", json=user_data)
@@ -376,7 +372,7 @@ class TestUserValidation:
             "senha": "ValidPass123@",
             "email": "test@example.com",
             "tag": "cliente",
-            "plan": "plan_invalido"  # Plan não permitido
+            "plan": "plan_invalido"
         }
         
         response = client.post("/cadastro", json=user_data)
@@ -386,7 +382,7 @@ class TestUserValidation:
         """Testa validação de senha muito curta"""
         user_data = {
             "login": "validuser",
-            "senha": "123",  # Menos de 6 caracteres
+            "senha": "123",
             "email": "test@example.com",
             "tag": "cliente"
         }
@@ -402,16 +398,15 @@ class TestUserEdgeCases:
         user_data = {
             "login": "testuser",
             "senha": "ValidPass123@",
-            "email": "TEST@EXAMPLE.COM",  # Maiúsculo
+            "email": "TEST@EXAMPLE.COM",
             "tag": "cliente"
         }
         
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_200_OK
         
-        # Verifica se pode fazer login com email em minúsculo
         login_response = client.post("/login", json={
-            "email_ou_login": "test@example.com",  # Minúsculo
+            "email_ou_login": "test@example.com",
             "senha": "ValidPass123@"
         })
         assert login_response.status_code == status.HTTP_200_OK
@@ -419,8 +414,7 @@ class TestUserEdgeCases:
     def test_criar_usuario_login_maiusculo(self, client):
         """Testa criação de usuário com login em maiúsculo (deve converter para minúsculo)"""
         user_data = {
-            "login": "TESTUSER",  # Maiúsculo
-            "senha": "ValidPass123@",
+            "login": "TESTUSER",
             "email": "test@example.com",
             "tag": "cliente"
         }
@@ -428,9 +422,8 @@ class TestUserEdgeCases:
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_200_OK
         
-        # Verifica se pode fazer login com login em minúsculo
         login_response = client.post("/login", json={
-            "email_ou_login": "testuser",  # Minúsculo
+            "email_ou_login": "testuser",
             "senha": "ValidPass123@"
         })
         assert login_response.status_code == status.HTTP_200_OK
@@ -438,18 +431,17 @@ class TestUserEdgeCases:
     def test_usuario_com_espacos_nos_campos(self, client):
         """Testa criação de usuário com espaços nos campos (deve fazer strip)"""
         user_data = {
-            "login": "  testuser  ",  # Com espaços
+            "login": "  testuser  ",
             "senha": "ValidPass123@",
-            "email": "  test@example.com  ",  # Com espaços
+            "email": "  test@example.com  ",
             "tag": "cliente"
         }
         
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_200_OK
         
-        # Verifica se pode fazer login sem os espaços
         login_response = client.post("/login", json={
-            "email_ou_login": "testuser",  # Sem espaços
+            "email_ou_login": "testuser",
             "senha": "ValidPass123@"
         })
         assert login_response.status_code == status.HTTP_200_OK
@@ -461,7 +453,6 @@ class TestUserEdgeCases:
             "senha": "ValidPass123@",
             "email": "noplan@example.com",
             "tag": "cliente"
-            # plan não fornecido (None)
         }
         
         response = client.post("/cadastro", json=user_data)
@@ -473,13 +464,11 @@ class TestUserEdgeCases:
             "login": "userdefault",
             "senha": "ValidPass123@",
             "email": "default@example.com"
-            # tag não fornecida (deve ser 'cliente' por padrão)
         }
         
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_200_OK
         
-        # Faz login e verifica se tag é 'cliente'
         login_response = client.post("/login", json={
             "email_ou_login": "default@example.com",
             "senha": "ValidPass123@"

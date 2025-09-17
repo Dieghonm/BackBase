@@ -1,6 +1,12 @@
 import os
 from pydantic_settings import BaseSettings
 from typing import Optional, List
+from .constants import (
+    JWT_EXPIRE_MINUTES, 
+    DEFAULT_RATE_LIMITS,
+    VALID_USER_TAGS,
+    VALID_USER_PLANS
+)
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./banco.db"
@@ -11,14 +17,14 @@ class Settings(BaseSettings):
     
     jwt_secret_key: str = "dev-super-secret-key-change-in-production-2024"
     jwt_algorithm: str = "HS256"
-    jwt_expire_minutes: int = 30
+    jwt_expire_minutes: int = JWT_EXPIRE_MINUTES
     
     debug: bool = False
     api_version: str = "1.0.0"
     api_title: str = "BackBase API"
     
-    rate_limit_login: str = "5/minute"
-    rate_limit_cadastro: str = "3/minute"
+    rate_limit_login: str = DEFAULT_RATE_LIMITS['LOGIN']
+    rate_limit_cadastro: str = DEFAULT_RATE_LIMITS['CADASTRO']
     
     cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8080"]
     
@@ -28,7 +34,6 @@ class Settings(BaseSettings):
         Retorna origins seguros baseado no ambiente
         """
         if self.environment == "development":
-
             return [
                 "http://localhost:3000",
                 "http://localhost:8080", 
@@ -46,6 +51,16 @@ class Settings(BaseSettings):
     environment: Optional[str] = "development"
     port: Optional[int] = 8000
     host: Optional[str] = "0.0.0.0"
+    
+    @property
+    def valid_user_tags(self) -> List[str]:
+        """Retorna tags válidas de usuário"""
+        return VALID_USER_TAGS
+    
+    @property  
+    def valid_user_plans(self) -> List[str]:
+        """Retorna planos válidos de usuário"""
+        return VALID_USER_PLANS
 
     class Config:
         env_file = ".env"

@@ -30,6 +30,6 @@ JWT_EXPIRE_SECONDS = JWT_EXPIRE_DAYS * 24 * 60 * 60
 MIN_PASSWORD_LENGTH = 8
 
 DEFAULT_RATE_LIMITS = {
-    'LOGIN': '5/minute',
-    'CADASTRO': '3/minute'
+    'LOGIN': '10/minute',
+    'CADASTRO': '5/minute'
 }

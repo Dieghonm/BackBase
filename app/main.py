@@ -20,7 +20,7 @@ from .utils.jwt_auth import (
 )
 from .services import (
     criar_usuario,
-    listar_usuarios, 
+    listar_usuarios,    
     buscar_usuario_por_id,
     buscar_usuario_por_email,
     buscar_usuario_por_login,
@@ -54,19 +54,17 @@ app.add_middleware(
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    """Handler personalizado para rate limiting"""
-    response = JSONResponse(
+    limit_value = str(exc.detail).split(" ")[0] if hasattr(exc, "detail") else "N/A"
+    return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={
             "error": "Rate limit exceeded",
-            "message": f"Muitas tentativas. Tente novamente em {exc.retry_after} segundos.",
-            "retry_after": exc.retry_after,
-            "limit": str(exc.detail).split(" ")[0] if hasattr(exc, 'detail') else "N/A",
+            "message": "Muitas tentativas. Tente novamente mais tarde.",
+            "limit": limit_value,
             "endpoint": str(request.url.path)
-        }
+        },
+        headers={"Retry-After": "60"}
     )
-    response.headers["Retry-After"] = str(exc.retry_after)
-    return response
 
 @app.on_event("startup")
 def startup_event():
