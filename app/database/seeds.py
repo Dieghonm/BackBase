@@ -5,27 +5,28 @@ import logging
 
 logger = logging.getLogger('app.database.seeds')
 
+# ✅ CORRIGIDO - plans consistentes, sem 'admin' como plan
 usuarios_iniciais = [
     {
         "login": "dieghonm", 
         "email": "dieghonm@gmail.com", 
-        "tag": "admin",
+        "tag": "admin",  # ✅ admin é TAG
         "senha": "Admin123@",
-        "plan": "admin"
+        "plan": "anual"  # ✅ admin usa plan normal
     },
     {
         "login": "cavamaga", 
         "email": "cava.maga@gmail.com", 
-        "tag": "admin",
+        "tag": "admin",  # ✅ admin é TAG
         "senha": "Admin123@",
-        "plan": "admin"
+        "plan": "anual"  # ✅ admin usa plan normal
     },
     {
         "login": "tiaguetevital", 
         "email": "tiagovital999@gmail.com", 
-        "tag": "admin",
+        "tag": "admin",  # ✅ admin é TAG
         "senha": "Admin123@", 
-        "plan": "admin"
+        "plan": "anual"  # ✅ admin usa plan normal
     },
     {
         "login": "pietro", 
@@ -37,7 +38,7 @@ usuarios_iniciais = [
     {
         "login": "demo_cliente", 
         "email": "cliente@demo.com", 
-        "tag": "cliente",
+        "tag": "cliente",  # ✅ Consistente com schemas.py
         "senha": "Cliente123@",
         "plan": "trial"
     }
@@ -81,7 +82,7 @@ def criar_usuarios_iniciais():
                         email=u["email"].lower().strip(),
                         tag=u["tag"],
                         senha=senha_hashada,
-                        plan=u["plan"],
+                        plan=u["plan"],  # ✅ Agora sempre plan normal
                         plan_date=datetime.utcnow(),
                         credencial=credencial,
                         created_at=datetime.utcnow()
@@ -109,6 +110,7 @@ def criar_usuarios_iniciais():
         total_usuarios = db.query(Usuario).count()
         logger.info(f"📊 Total de usuários no sistema: {total_usuarios}")
         
+        # ✅ TAGS PADRONIZADAS
         for tag in ['admin', 'tester', 'cliente']:
             count = db.query(Usuario).filter_by(tag=tag).count()
             if count > 0:

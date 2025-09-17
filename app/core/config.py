@@ -25,8 +25,28 @@ class Settings(BaseSettings):
     rate_limit_login: str = "5/minute"
     rate_limit_cadastro: str = "3/minute"
     
-    # CORS - usando List ao invés de string
-    cors_origins: List[str] = ["*"]
+    # ✅ CORS CORRIGIDO - SEGURO PARA PRODUÇÃO
+    cors_origins: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    
+    # ✅ PROPRIEDADE DINÂMICA PARA CORS
+    @property
+    def cors_origins_safe(self) -> List[str]:
+        """
+        Retorna origins seguros baseado no ambiente
+        """
+        if self.environment == "development":
+            # Em desenvolvimento, permite localhost em várias portas
+            return [
+                "http://localhost:3000",
+                "http://localhost:8080", 
+                "http://localhost:5173",  # Vite
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:8080"
+            ]
+        else:
+            # ✅ EM PRODUÇÃO: NUNCA usar ["*"] com credentials
+            production_origins = os.getenv("CORS_ORIGINS", "").split(",")
+            return [origin.strip() for origin in production_origins if origin.strip()]
 
     # Logs
     log_level: str = "INFO"

@@ -1,12 +1,14 @@
 from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 from typing import Optional
+# ✅ IMPORTA CONSTANTES PADRONIZADAS
+from ..core.constants import VALID_USER_TAGS, VALID_USER_PLANS, MIN_PASSWORD_LENGTH
 
 class UsuarioCreate(BaseModel):
     login: str
     senha: str
     email: EmailStr
-    tag: str = "cliente"
+    tag: str = "cliente"  # ✅ Padrão consistente
     plan: Optional[str] = None
     
     @validator('login')
@@ -19,8 +21,9 @@ class UsuarioCreate(BaseModel):
     
     @validator('senha')
     def validate_senha(cls, v):
-        if len(v) < 6:
-            raise ValueError('Senha deve ter pelo menos 6 caracteres')
+        # ✅ CORRIGIDO - agora usa constante padronizada (8 caracteres)
+        if len(v) < MIN_PASSWORD_LENGTH:
+            raise ValueError(f'Senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v
     
     @validator('email')
@@ -29,18 +32,18 @@ class UsuarioCreate(BaseModel):
     
     @validator('tag')
     def validate_tag(cls, v):
-        valid_tags = ['admin', 'tester', 'cliente']
-        if v not in valid_tags:
-            raise ValueError(f'Tag deve ser uma de: {", ".join(valid_tags)}')
+        # ✅ CORRIGIDO - usa constantes padronizadas
+        if v not in VALID_USER_TAGS:
+            raise ValueError(f'Tag deve ser uma de: {", ".join(VALID_USER_TAGS)}')
         return v
     
     @validator('plan')
     def validate_plan(cls, v):
         if v is None:
             return v
-        valid_plans = ['trial', 'mensal', 'trimestral', 'semestral', 'anual', 'admin']
-        if v not in valid_plans:
-            raise ValueError(f'Plan deve ser um de: {", ".join(valid_plans)}')
+        # ✅ CORRIGIDO - usa constantes padronizadas
+        if v not in VALID_USER_PLANS:
+            raise ValueError(f'Plan deve ser um de: {", ".join(VALID_USER_PLANS)}')
         return v
 
 class LoginRequest(BaseModel):
@@ -77,7 +80,7 @@ class TokenResponse(BaseModel):
     """Resposta do endpoint de login com JWT (válido por 1 mês EXATO)"""
     access_token: str
     token_type: str = "bearer"
-    expires_in: int = 2592000
+    expires_in: int = 2592000  # ✅ Consistente com constants.py
     token_duration: str = "1_month"
     user: dict
 
@@ -111,6 +114,7 @@ class PasswordChangeRequest(BaseModel):
     
     @validator('senha_nova')
     def validate_new_password(cls, v):
-        if len(v) < 8:
-            raise ValueError('Nova senha deve ter pelo menos 8 caracteres')
+        # ✅ CORRIGIDO - usa constante padronizada
+        if len(v) < MIN_PASSWORD_LENGTH:
+            raise ValueError(f'Nova senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v
