@@ -29,7 +29,7 @@ class UsuarioCreate(BaseModel):
     
     @validator('tag')
     def validate_tag(cls, v):
-        valid_tags = ['admin', 'tester', 'cliente', 'usuario']
+        valid_tags = ['admin', 'tester', 'cliente']
         if v not in valid_tags:
             raise ValueError(f'Tag deve ser uma de: {", ".join(valid_tags)}')
         return v
@@ -38,7 +38,7 @@ class UsuarioCreate(BaseModel):
     def validate_plan(cls, v):
         if v is None:
             return v
-        valid_plans = ['trial', 'mensal', 'trimestral', 'semestral', 'admin']
+        valid_plans = ['trial', 'mensal', 'trimestral', 'semestral', 'anual', 'admin']
         if v not in valid_plans:
             raise ValueError(f'Plan deve ser um de: {", ".join(valid_plans)}')
         return v
@@ -73,12 +73,11 @@ class UsuarioResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# 🔥 SCHEMAS ATUALIZADOS PARA TOKEN DE 1 MÊS
 class TokenResponse(BaseModel):
-    """Resposta do endpoint de login com JWT (válido por 1 mês)"""
+    """Resposta do endpoint de login com JWT (válido por 1 mês EXATO)"""
     access_token: str
     token_type: str = "bearer"
-    expires_in: int = 2628000  # 🔥 1 MÊS em segundos (30 dias * 24h * 60min * 60seg)
+    expires_in: int = 2592000
     token_duration: str = "1_month"
     user: dict
 
@@ -89,3 +88,29 @@ class TokenData(BaseModel):
     login: Optional[str] = None
     tag: Optional[str] = None
     token_duration: Optional[str] = None
+    token_version: Optional[str] = None
+
+class CredentialValidation(BaseModel):
+    """Validação de credencial gerada"""
+    credencial: str
+    is_unique: bool
+    generated_at: datetime
+    expires_at: datetime
+
+class PasswordChangeRequest(BaseModel):
+    """Request para alteração de senha"""
+    senha_atual: str
+    senha_nova: str
+    confirmar_senha: str
+    
+    @validator('confirmar_senha')
+    def validate_password_match(cls, v, values):
+        if 'senha_nova' in values and v != values['senha_nova']:
+            raise ValueError('Confirmação de senha não confere')
+        return v
+    
+    @validator('senha_nova')
+    def validate_new_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Nova senha deve ter pelo menos 8 caracteres')
+        return v

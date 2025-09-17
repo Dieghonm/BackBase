@@ -1,8 +1,13 @@
-import bcrypt
+from passlib.context import CryptContext
+import hashlib
+import secrets
+from datetime import datetime, timedelta
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     """
-    Cria um hash seguro da senha usando bcrypt
+    Cria um hash seguro da senha usando bcrypt via passlib
     
     Args:
         password: Senha em texto plano
@@ -10,15 +15,7 @@ def hash_password(password: str) -> str:
     Returns:
         Hash da senha como string
     """
-    # Converte a senha para bytes
-    password_bytes = password.encode('utf-8')
-    
-    # Gera um salt e cria o hash
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    
-    # Retorna o hash como string
-    return hashed.decode('utf-8')
+    return pwd_context.hash(password)
 
 def verify_password(password: str, hashed_password: str) -> bool:
     """
@@ -32,12 +29,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
         True se a senha estiver correta, False caso contrário
     """
     try:
-        # Converte ambos para bytes
-        password_bytes = password.encode('utf-8')
-        hashed_bytes = hashed_password.encode('utf-8')
-        
-        # Verifica se a senha corresponde ao hash
-        return bcrypt.checkpw(password_bytes, hashed_bytes)
+        return pwd_context.verify(password, hashed_password)
     except Exception as e:
         print(f"Erro ao verificar senha: {e}")
         return False
@@ -54,25 +46,51 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
     """
     errors = []
     
-    # Verifica comprimento mínimo
     if len(password) < 8:
         errors.append("Senha deve ter pelo menos 8 caracteres")
     
-    # Verifica se tem pelo menos uma letra minúscula
     if not any(c.islower() for c in password):
         errors.append("Senha deve ter pelo menos uma letra minúscula")
     
-    # Verifica se tem pelo menos uma letra maiúscula
     if not any(c.isupper() for c in password):
         errors.append("Senha deve ter pelo menos uma letra maiúscula")
     
-    # Verifica se tem pelo menos um número
     if not any(c.isdigit() for c in password):
         errors.append("Senha deve ter pelo menos um número")
-    
-    # Verifica se tem pelo menos um caractere especial
+
     special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
     if not any(c in special_chars for c in password):
         errors.append("Senha deve ter pelo menos um caractere especial")
     
     return len(errors) == 0, errors
+
+def gerar_credencial(email: str, dias: int = 365) -> str:
+    """
+    Gera uma credencial única para o usuário (válida por 1 ano)
+    
+    Args:
+        email: Email do usuário
+        dias: Validade em dias (padrão 365)
+    
+    Returns:
+        Credencial SHA256 hexadecimal
+    """
+    validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
+    raw = f"{email}-{validade}-{secrets.token_hex(16)}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+def verify_credencial_uniqueness(db_session, credencial: str) -> bool:
+    """
+    Verifica se a credencial é única no banco de dados
+    
+    Args:
+        db_session: Sessão do banco de dados
+        credencial: Credencial a ser verificada
+    
+    Returns:
+        True se credencial for única, False se já existir
+    """
+    from ..models.user import Usuario
+    
+    existing = db_session.query(Usuario).filter(Usuario.credencial == credencial).first()
+    return existing is None

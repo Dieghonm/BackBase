@@ -1,18 +1,12 @@
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from fastapi import HTTPException, status
-import hashlib
-import secrets
+from ..core.config import settings
+from .security import hash_password, verify_password, gerar_credencial
 
-# Configurações JWT diretas para evitar import circular
-SECRET_KEY = "dev-super-secret-key-change-in-production-2024"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 43800  # 🔥 1 MÊS = 30 dias * 24 horas * 60 minutos = 43,200 min + buffer
-
-# Contexto para hash de senhas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200
+ACCESS_TOKEN_EXPIRE_SECONDS = 2592000
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -30,20 +24,18 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        # 🔥 TOKEN DE 1 MÊS
         expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({
-        "exp": expire.timestamp(),  # 🔧 CORRIGIDO: Usar timestamp() para epoch
-        "iat": datetime.utcnow().timestamp(),  # 🔧 CORRIGIDO: Usar timestamp() para epoch
-        "token_duration": "1_month"  # Identificador da duração
+        "exp": expire,
+        "iat": datetime.utcnow(),
+        "token_duration": "1_month",
+        "token_version": "1.0"
     })
     
     try:
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
         print(f"🎯 Token criado com expiração: {expire.strftime('%d/%m/%Y %H:%M:%S')} (1 mês)")
-        print(f"🔧 Timestamp de expiração: {expire.timestamp()}")
-        print(f"🔧 Timestamp atual: {datetime.utcnow().timestamp()}")
         return encoded_jwt
     except Exception as e:
         raise HTTPException(
@@ -66,47 +58,28 @@ def verify_token(token: str) -> Dict[str, Any]:
     """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Não foi possível validar as credenciais",
+        detail="Token inválido ou expirado",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
     try:
-        # 🔧 CORRIGIDO: Deixar a biblioteca python-jose fazer a validação de expiração
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         
-        # Debug: Mostrar informações do token
-        exp_timestamp = payload.get("exp")
-        current_timestamp = datetime.utcnow().timestamp()
-        
-        print(f"🔧 Debug Token:")
-        print(f"   - Token exp: {exp_timestamp}")
-        print(f"   - Current: {current_timestamp}")
-        print(f"   - Diff: {exp_timestamp - current_timestamp} segundos")
-        
-        if exp_timestamp:
-            exp_datetime = datetime.fromtimestamp(exp_timestamp)
-            current_datetime = datetime.utcnow()
-            print(f"   - Expira em: {exp_datetime}")
-            print(f"   - Agora: {current_datetime}")
-            print(f"   - Tempo restante: {exp_datetime - current_datetime}")
-        
-        # A biblioteca python-jose já faz a verificação de expiração automaticamente
-        # Se chegou até aqui, o token está válido
+        user_id = payload.get("user_id")
+        if user_id is None:
+            raise credentials_exception
         
         return payload
         
     except jwt.ExpiredSignatureError:
-        print("❌ Token realmente expirado")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expirado (1 mês se passou)",
+            detail="Token expirado. Faça login novamente.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError as e:
-        print(f"❌ Erro JWT: {e}")
+    except JWTError:
         raise credentials_exception
     except Exception as e:
-        print(f"❌ Erro geral: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao verificar token: {str(e)}"
@@ -124,45 +97,14 @@ def get_user_from_token(token: str) -> Dict[str, Any]:
     """
     payload = verify_token(token)
     
-    user_id = payload.get("user_id")
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido: user_id não encontrado"
-        )
-    
     return {
-        "user_id": user_id,
+        "user_id": payload.get("user_id"),
         "email": payload.get("email"),
         "login": payload.get("login"),
         "tag": payload.get("tag"),
-        "token_duration": payload.get("token_duration", "unknown")
+        "token_duration": payload.get("token_duration", "1_month"),
+        "token_version": payload.get("token_version", "1.0")
     }
-
-def hash_password(password: str) -> str:
-    """
-    Gera hash da senha usando bcrypt
-    
-    Args:
-        password: Senha em texto plano
-    
-    Returns:
-        Hash da senha
-    """
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Verifica se a senha está correta
-    
-    Args:
-        plain_password: Senha em texto plano
-        hashed_password: Hash da senha armazenada
-    
-    Returns:
-        True se senha estiver correta
-    """
-    return pwd_context.verify(plain_password, hashed_password)
 
 def create_user_token_data(user_id: int, email: str, login: str, tag: str) -> Dict[str, Any]:
     """
@@ -186,9 +128,14 @@ def create_user_token_data(user_id: int, email: str, login: str, tag: str) -> Di
         "created_at": datetime.utcnow().isoformat()
     }
 
-def gerar_credencial(email: str, dias: int = 365) -> str:  # 🔥 Credencial de 1 ano
-    """Gera uma credencial única para o usuário (válida por 1 ano)"""
-    validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
-    raw = f"{email}-{validade}-{secrets.token_hex(16)}"
-    return hashlib.sha256(raw.encode()).hexdigest()
+class TokenResponse:
+    """
+    Resposta do endpoint de login com JWT (válido por 1 mês)
+    Valores corrigidos para 30 dias exatos
+    """
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = ACCESS_TOKEN_EXPIRE_SECONDS  
+    token_duration: str = "1_month"
+    user: dict
 
