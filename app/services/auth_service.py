@@ -15,7 +15,6 @@ def autenticar_usuario(db: Session, email_ou_login: str, senha: str) -> Usuario 
     Returns:
         Objeto Usuario se autenticação for bem-sucedida, None caso contrário
     """
-    # Busca usuário por email ou login
     usuario = buscar_usuario_por_email(db, email_ou_login)
     if not usuario:
         usuario = buscar_usuario_por_login(db, email_ou_login)
@@ -23,7 +22,6 @@ def autenticar_usuario(db: Session, email_ou_login: str, senha: str) -> Usuario 
     if not usuario:
         return None
     
-    # Verifica se a senha está correta
     if not verify_password(senha, usuario.senha):
         return None
     

@@ -1,4 +1,3 @@
-# Imports principais para manter compatibilidade
 from .connection import Base, engine, DATABASE_URL
 from .session import SessionLocal, get_db
 
@@ -6,7 +5,6 @@ def criar_tabelas():
     """
     Função que cria as tabelas no banco
     """
-    # IMPORTANTE: Import aqui para garantir que o modelo seja registrado
     from ..models.user import Usuario
     
     print("🚀 Criando tabelas no banco de dados...")
@@ -21,7 +19,6 @@ def criar_usuarios_iniciais():
     from ..utils.jwt_auth import hash_password, gerar_credencial
     from datetime import datetime
     
-    # Dados dos usuários iniciais
     usuarios_iniciais = [
         {"login": "dieghonm", "email": "dieghonm@gmail.com", "tag": "admin", "senha": "Admin123@"},
         {"login": "cavamaga", "email": "cava.maga@gmail.com", "tag": "admin", "senha": "Admin123@"},
@@ -33,7 +30,6 @@ def criar_usuarios_iniciais():
     
     try:
         for u in usuarios_iniciais:
-            # Verifica se usuário já existe
             if not db.query(Usuario).filter_by(email=u["email"]).first():
                 senha_hashada = hash_password(u["senha"])
                 credencial = gerar_credencial(u["email"], dias=365)
@@ -62,7 +58,6 @@ def criar_usuarios_iniciais():
     finally:
         db.close()
 
-# Função combinada para inicialização completa
 def inicializar_banco():
     """
     Função que inicializa o banco completamente:
@@ -74,7 +69,6 @@ def inicializar_banco():
     criar_usuarios_iniciais()
     print("✅ Banco inicializado com sucesso!")
 
-# Exports para manter compatibilidade com código existente
 __all__ = [
     'Base',
     'engine', 

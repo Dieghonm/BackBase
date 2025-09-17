@@ -29,7 +29,6 @@ from .services import (
     autenticar_usuario
 )
 
-# ✨ CONFIGURAÇÃO RATE LIMITING
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
@@ -40,14 +39,11 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# ✨ MIDDLEWARE RATE LIMITING
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Security scheme para JWT
 security = HTTPBearer()
 
-# Configuração CORS para produção
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_safe,
@@ -56,7 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✨ HANDLER PERSONALIZADO PARA RATE LIMIT
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     """Handler personalizado para rate limiting"""
@@ -81,7 +76,6 @@ def startup_event():
     print(f"   - Login: {settings.rate_limit_login}")
     print(f"   - Cadastro: {settings.rate_limit_cadastro}")
 
-# Dependency para verificar token JWT
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Dependency para verificar JWT e retornar usuário atual
@@ -90,7 +84,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     user_data = get_user_from_token(token)
     return user_data
 
-# Rota raiz para health check
 @app.get("/")
 def root():
     """Endpoint raiz da API"""
@@ -107,7 +100,6 @@ def root():
         }
     }
 
-# Health check endpoint
 @app.get("/health")
 def health_check():
     """Health check da API"""
@@ -117,23 +109,19 @@ def health_check():
         "rate_limiting": "ativo"
     }
 
-# ✨ ENDPOINT COM RATE LIMIT
 @app.post("/cadastro", response_model=dict)
-@limiter.limit(settings.rate_limit_cadastro)  # 3/minuto conforme config
+@limiter.limit(settings.rate_limit_cadastro)
 def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = Depends(get_db)):
     """Cadastra um novo usuário (Rate Limit: 3 tentativas por minuto)"""
     try:
-        # Verifica se email já existe
         usuario_existente = buscar_usuario_por_email(db, usuario.email)
         if usuario_existente:
             raise HTTPException(status_code=400, detail="Email já cadastrado")
         
-        # Verifica se login já existe
         usuario_login_existente = buscar_usuario_por_login(db, usuario.login)
         if usuario_login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
-        # Hash da senha antes de salvar
         usuario.senha = hash_password(usuario.senha)
         
         novo_usuario = criar_usuario(db, usuario)
@@ -149,13 +137,11 @@ def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = De
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
-# ✨ ENDPOINT COM RATE LIMIT
 @app.post("/login", response_model=TokenResponse)
-@limiter.limit(settings.rate_limit_login)  # 5/minuto conforme config
+@limiter.limit(settings.rate_limit_login)
 def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
     """Realiza login do usuário e retorna JWT (VÁLIDO POR 1 MÊS)"""
     try:
-        # Busca usuário por email ou login
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
         if not usuario:
             usuario = buscar_usuario_por_login(db, dados_login.email_ou_login)
@@ -166,14 +152,12 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
                 detail="Usuário não encontrado"
             )
         
-        # Verifica senha
         if not verify_password(dados_login.senha, usuario.senha):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Senha incorreta"
             )
         
-        # Cria dados do token
         token_data = create_user_token_data(
             user_id=usuario.id,
             email=usuario.email,
@@ -181,13 +165,12 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
             tag=usuario.tag
         )
         
-        # 🔥 Gera JWT COM DURAÇÃO DE 1 MÊS
         access_token = create_access_token(data=token_data)
         
         return TokenResponse(
             access_token=access_token,
             token_type="bearer",
-            expires_in=2628000,  # 🔥 1 MÊS em segundos
+            expires_in=2628000,
             token_duration="1_month",
             user={
                 "id": usuario.id,
@@ -227,7 +210,6 @@ def get_current_user_info(current_user: dict = Depends(get_current_user), db: Se
 def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Lista todos os usuários (requer autenticação)"""
     try:
-        # Verifica se usuário tem permissão (admin)
         if current_user["tag"] not in ["admin", "tester"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -245,7 +227,6 @@ def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db:
 def buscar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Busca um usuário por ID (requer autenticação)"""
     try:
-        # Permite ver próprios dados ou se for admin
         if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin", "tester"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -265,14 +246,12 @@ def buscar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_cu
 def atualizar_usuario_endpoint(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Atualiza dados de um usuário (requer autenticação)"""
     try:
-        # Permite atualizar próprios dados ou se for admin
         if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Acesso negado: você só pode atualizar seus próprios dados"
             )
         
-        # Se for uma senha, faz hash
         if "senha" in dados:
             dados["senha"] = hash_password(dados["senha"])
         
@@ -289,7 +268,6 @@ def atualizar_usuario_endpoint(usuario_id: int, dados: dict, current_user: dict 
 def deletar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
     """Deleta um usuário (apenas admins)"""
     try:
-        # Apenas admins podem deletar usuários
         if current_user["tag"] != "admin":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -305,7 +283,6 @@ def deletar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_c
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
-# ✨ ENDPOINT PARA VERIFICAR STATUS DO RATE LIMITING
 @app.get("/rate-limit-status")
 def get_rate_limit_status(request: Request):
     """Endpoint para verificar status atual do rate limiting"""

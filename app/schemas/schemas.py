@@ -1,14 +1,13 @@
 from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 from typing import Optional
-# ✅ IMPORTA CONSTANTES PADRONIZADAS
 from ..core.constants import VALID_USER_TAGS, VALID_USER_PLANS, MIN_PASSWORD_LENGTH
 
 class UsuarioCreate(BaseModel):
     login: str
     senha: str
     email: EmailStr
-    tag: str = "cliente"  # ✅ Padrão consistente
+    tag: str = "cliente"
     plan: Optional[str] = None
     
     @validator('login')
@@ -21,7 +20,6 @@ class UsuarioCreate(BaseModel):
     
     @validator('senha')
     def validate_senha(cls, v):
-        # ✅ CORRIGIDO - agora usa constante padronizada (8 caracteres)
         if len(v) < MIN_PASSWORD_LENGTH:
             raise ValueError(f'Senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v
@@ -32,7 +30,6 @@ class UsuarioCreate(BaseModel):
     
     @validator('tag')
     def validate_tag(cls, v):
-        # ✅ CORRIGIDO - usa constantes padronizadas
         if v not in VALID_USER_TAGS:
             raise ValueError(f'Tag deve ser uma de: {", ".join(VALID_USER_TAGS)}')
         return v
@@ -41,7 +38,6 @@ class UsuarioCreate(BaseModel):
     def validate_plan(cls, v):
         if v is None:
             return v
-        # ✅ CORRIGIDO - usa constantes padronizadas
         if v not in VALID_USER_PLANS:
             raise ValueError(f'Plan deve ser um de: {", ".join(VALID_USER_PLANS)}')
         return v
@@ -80,7 +76,7 @@ class TokenResponse(BaseModel):
     """Resposta do endpoint de login com JWT (válido por 1 mês EXATO)"""
     access_token: str
     token_type: str = "bearer"
-    expires_in: int = 2592000  # ✅ Consistente com constants.py
+    expires_in: int = 2592000
     token_duration: str = "1_month"
     user: dict
 
@@ -114,7 +110,6 @@ class PasswordChangeRequest(BaseModel):
     
     @validator('senha_nova')
     def validate_new_password(cls, v):
-        # ✅ CORRIGIDO - usa constante padronizada
         if len(v) < MIN_PASSWORD_LENGTH:
             raise ValueError(f'Nova senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v

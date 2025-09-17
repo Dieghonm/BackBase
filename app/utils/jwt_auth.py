@@ -3,7 +3,6 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import HTTPException, status
 from ..core.config import settings
-# ✅ CORRIGIDO - agora importa apenas o que existe em security.py
 from .security import hash_password, verify_password, gerar_credencial
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200

@@ -1,32 +1,31 @@
 from datetime import datetime
 from .session import SessionLocal
-from ..utils.security import hash_password, gerar_credencial, verify_credencial_uniqueness  # ✅ Fonte única
+from ..utils.security import hash_password, gerar_credencial, verify_credencial_uniqueness
 import logging
 
 logger = logging.getLogger('app.database.seeds')
 
-# ✅ CORRIGIDO - plans consistentes, sem 'admin' como plan
 usuarios_iniciais = [
     {
         "login": "dieghonm", 
         "email": "dieghonm@gmail.com", 
-        "tag": "admin",  # ✅ admin é TAG
+        "tag": "admin", 
         "senha": "Admin123@",
-        "plan": "anual"  # ✅ admin usa plan normal
+        "plan": "anual"
     },
     {
         "login": "cavamaga", 
         "email": "cava.maga@gmail.com", 
-        "tag": "admin",  # ✅ admin é TAG
+        "tag": "admin",
         "senha": "Admin123@",
-        "plan": "anual"  # ✅ admin usa plan normal
+        "plan": "anual"
     },
     {
         "login": "tiaguetevital", 
         "email": "tiagovital999@gmail.com", 
-        "tag": "admin",  # ✅ admin é TAG
+        "tag": "admin",
         "senha": "Admin123@", 
-        "plan": "anual"  # ✅ admin usa plan normal
+        "plan": "anual" 
     },
     {
         "login": "pietro", 
@@ -38,7 +37,7 @@ usuarios_iniciais = [
     {
         "login": "demo_cliente", 
         "email": "cliente@demo.com", 
-        "tag": "cliente",  # ✅ Consistente com schemas.py
+        "tag": "cliente", 
         "senha": "Cliente123@",
         "plan": "trial"
     }
@@ -82,7 +81,7 @@ def criar_usuarios_iniciais():
                         email=u["email"].lower().strip(),
                         tag=u["tag"],
                         senha=senha_hashada,
-                        plan=u["plan"],  # ✅ Agora sempre plan normal
+                        plan=u["plan"],
                         plan_date=datetime.utcnow(),
                         credencial=credencial,
                         created_at=datetime.utcnow()

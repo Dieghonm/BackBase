@@ -1,7 +1,6 @@
 from sqlalchemy.orm import sessionmaker
 from .connection import engine
 
-# Configuração das sessões
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

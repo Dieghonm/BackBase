@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..models.user import Usuario
 from ..schemas.schemas import UsuarioCreate
-from ..utils.jwt_auth import hash_password, gerar_credencial  # Usar apenas jwt_auth
+from ..utils.jwt_auth import hash_password, gerar_credencial
 from datetime import datetime
 from fastapi import HTTPException
 
@@ -11,22 +11,18 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
     Cria um novo usuário no banco com validações completas
     """
     try:
-        # Verifica se já existe usuário com mesmo email
         usuario_existente = db.query(Usuario).filter(Usuario.email == usuario.email.lower()).first()
         if usuario_existente:
             raise HTTPException(status_code=400, detail="Email já está em uso")
         
-        # Verifica se já existe usuário com mesmo login
         login_existente = db.query(Usuario).filter(Usuario.login == usuario.login.lower()).first()
         if login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
-        # Gera credencial válida por 1 ano
         credencial = gerar_credencial(usuario.email, dias=365)
         
-        # Hash da senha se não estiver hasheada
         senha_final = usuario.senha
-        if not senha_final.startswith('$2b$'):  # Verifica se já é hash bcrypt
+        if not senha_final.startswith('$2b$'):
             senha_final = hash_password(senha_final)
         
         db_usuario = Usuario(
@@ -83,7 +79,6 @@ def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
         if not db_usuario:
             return None
         
-        # Valida email único se estiver sendo alterado
         if 'email' in dados and dados['email'] != db_usuario.email:
             email_existente = db.query(Usuario).filter(
                 Usuario.email == dados['email'].lower(),
@@ -93,7 +88,6 @@ def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
                 raise HTTPException(status_code=400, detail="Email já está em uso por outro usuário")
             dados['email'] = dados['email'].lower().strip()
         
-        # Valida login único se estiver sendo alterado
         if 'login' in dados and dados['login'] != db_usuario.login:
             login_existente = db.query(Usuario).filter(
                 Usuario.login == dados['login'].lower(),
@@ -103,12 +97,10 @@ def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
                 raise HTTPException(status_code=400, detail="Login já está em uso por outro usuário")
             dados['login'] = dados['login'].lower().strip()
         
-        # Se a senha está sendo atualizada, criptografa ela
         if 'senha' in dados:
-            if not dados['senha'].startswith('$2b$'):  # Verifica se já é hash bcrypt
+            if not dados['senha'].startswith('$2b$'):
                 dados['senha'] = hash_password(dados['senha'])
         
-        # Atualiza campos
         for key, value in dados.items():
             if hasattr(db_usuario, key):
                 setattr(db_usuario, key, value)
@@ -147,11 +139,9 @@ def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: st
         if not usuario:
             return False
         
-        # Verifica se a senha atual está correta
         if not verify_password(senha_atual, usuario.senha):
             return False
         
-        # Atualiza com a nova senha criptografada
         usuario.senha = hash_password(senha_nova)
         db.commit()
         return True
@@ -159,4 +149,3 @@ def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: st
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao alterar senha: {str(e)}")
-

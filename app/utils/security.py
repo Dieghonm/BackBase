@@ -64,7 +64,6 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
     
     return len(errors) == 0, errors
 
-# ✅ MOVIDO DE jwt_auth.py PARA CÁ - CORRIGE O IMPORT CIRCULAR
 def gerar_credencial(email: str, dias: int = 365) -> str:
     """
     Gera uma credencial única para o usuário (válida por 1 ano)

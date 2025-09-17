@@ -20,11 +20,10 @@ class TestPerformanceBasic:
 
     def test_rate_limit_response_time(self, client):
         """Testa tempo de resposta quando rate limit é ativado"""
-        # Fazer muitas requisições para ativar rate limit
         responses = []
         times = []
         
-        for i in range(8):  # Acima do limite normal
+        for i in range(8):
             start_time = time.time()
             
             try:
@@ -38,7 +37,6 @@ class TestPerformanceBasic:
             except Exception:
                 continue
         
-        # Mesmo com rate limiting, respostas devem ser rápidas
         for response_time in times:
             assert response_time < 2.0, f"Rate limit response muito lento: {response_time:.3f}s"
 
@@ -49,13 +47,11 @@ class TestPerformanceBenchmarks:
         """Benchmark de operações básicas da API"""
         benchmarks = {}
         
-        # Health Check
         start = time.time()
         response = client.get("/health")
         benchmarks["health_check"] = time.time() - start
         assert response.status_code == status.HTTP_200_OK
         
-        # Login
         start = time.time()
         response = client.post("/login", json={
             "email_ou_login": sample_user_data["email"],
@@ -64,30 +60,25 @@ class TestPerformanceBenchmarks:
         benchmarks["login"] = time.time() - start
         assert response.status_code == status.HTTP_200_OK
         
-        # Get User Info
         start = time.time()
         response = client.get("/me", headers=auth_headers)
         benchmarks["get_user_info"] = time.time() - start
         assert response.status_code == status.HTTP_200_OK
         
-        # Get User by ID
         start = time.time()
         response = client.get(f"/usuarios/{created_user.id}", headers=auth_headers)
         benchmarks["get_user_by_id"] = time.time() - start
         assert response.status_code == status.HTTP_200_OK
         
-        # Print benchmarks para análise
         print(f"\n📊 BENCHMARKS DE PERFORMANCE:")
         for operation, time_taken in benchmarks.items():
             print(f"   - {operation}: {time_taken:.3f}s")
         
-        # Verificar se estão dentro dos limites aceitáveis
         assert benchmarks["health_check"] < 0.5, "Health check muito lento"
         assert benchmarks["login"] < 2.0, "Login muito lento"  
         assert benchmarks["get_user_info"] < 1.0, "Get user info muito lento"
         assert benchmarks["get_user_by_id"] < 1.0, "Get user by ID muito lento"
         
-        # Tempo médio total
         avg_time = sum(benchmarks.values()) / len(benchmarks)
         assert avg_time < 1.0, f"Tempo médio muito alto: {avg_time:.3f}s"
 
@@ -102,7 +93,6 @@ class TestPerformanceBenchmarks:
             "tag": "cliente"
         }
         
-        # CREATE
         create_start = time.time()
         create_response = client.post("/cadastro", json=user_data)
         create_time = time.time() - create_start
@@ -112,7 +102,6 @@ class TestPerformanceBenchmarks:
         
         user_id = create_response.json()["id"]
         
-        # LOGIN para obter token
         login_start = time.time()
         login_response = client.post("/login", json={
             "email_ou_login": user_data["email"],
@@ -124,14 +113,12 @@ class TestPerformanceBenchmarks:
         token = login_response.json()["access_token"]
         headers = {"Authorization": f"Bearer {token}"}
         
-        # READ
         read_start = time.time()
         read_response = client.get(f"/usuarios/{user_id}", headers=headers)
         read_time = time.time() - read_start
         
         assert read_response.status_code == status.HTTP_200_OK
         
-        # UPDATE
         update_start = time.time()
         update_response = client.put(f"/usuarios/{user_id}", 
                                    json={"tag": "tester"}, 
@@ -142,7 +129,6 @@ class TestPerformanceBenchmarks:
         
         total_time = time.time() - total_start
         
-        # Print benchmark results
         print(f"\n🔄 BENCHMARK CRUD COMPLETO:")
         print(f"   - CREATE: {create_time:.3f}s")
         print(f"   - LOGIN: {login_time:.3f}s")  
@@ -150,7 +136,6 @@ class TestPerformanceBenchmarks:
         print(f"   - UPDATE: {update_time:.3f}s")
         print(f"   - TOTAL: {total_time:.3f}s")
         
-        # Verificações
         assert create_time < 3.0, f"CREATE muito lento: {create_time:.3f}s"
         assert login_time < 2.0, f"LOGIN muito lento: {login_time:.3f}s"
         assert read_time < 1.0, f"READ muito lento: {read_time:.3f}s"
@@ -181,7 +166,6 @@ class TestPerformanceRegression:
         print(f"   - Tempo mínimo: {min_time:.3f}s")
         print(f"   - Tempo máximo: {max_time:.3f}s")
         
-        # Baseline: health check deve ser sempre rápido
         assert avg_time < 0.5, f"Baseline health check degradado: {avg_time:.3f}s"
         assert max_time < 1.0, f"Pior caso health check muito lento: {max_time:.3f}s"
 
@@ -204,7 +188,6 @@ class TestPerformanceRegression:
         print(f"   - Tempo médio: {avg_time:.3f}s")
         print(f"   - Tempo máximo: {max_time:.3f}s")
         
-        # Baseline: verificação JWT deve ser rápida
         assert avg_time < 1.0, f"Baseline JWT degradado: {avg_time:.3f}s"
         assert max_time < 2.0, f"Pior caso JWT muito lento: {max_time:.3f}s"
 
@@ -221,7 +204,6 @@ class TestPerformanceStress:
         
         start_time = time.time()
         
-        # 20 requisições simultâneas
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(make_request) for _ in range(20)]
             results = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -229,7 +211,6 @@ class TestPerformanceStress:
         end_time = time.time()
         total_time = end_time - start_time
         
-        # Contar sucessos
         sucessos = sum(1 for status in results if status == 200)
         taxa_sucesso = sucessos / len(results)
         
@@ -239,10 +220,8 @@ class TestPerformanceStress:
         print(f"   - Taxa de sucesso: {taxa_sucesso:.2%}")
         print(f"   - Tempo total: {total_time:.3f}s")
         
-        # Pelo menos 80% deve ser bem-sucedido
         assert taxa_sucesso >= 0.8, f"Taxa de sucesso muito baixa: {taxa_sucesso:.2%}"
         
-        # Não deve demorar mais que 10 segundos
         assert total_time < 10.0, f"Stress test muito lento: {total_time:.3f}s"
 
     def test_stress_mixed_operations(self, client, created_user, sample_user_data):
@@ -264,9 +243,9 @@ class TestPerformanceStress:
             return client.get("/rate-limit-status").status_code
         
         operations = [
-            operacao_health, operacao_health, operacao_health,  # 3x health (mais leves)
-            operacao_rate_limit, operacao_rate_limit,  # 2x rate limit status
-            operacao_login  # 1x login (mais pesado)
+            operacao_health, operacao_health, operacao_health,
+            operacao_rate_limit, operacao_rate_limit,
+            operacao_login
         ]
         
         start_time = time.time()
@@ -278,7 +257,7 @@ class TestPerformanceStress:
         end_time = time.time()
         total_time = end_time - start_time
         
-        sucessos = sum(1 for status in results if status in [200, 401, 429])  # 429 é ok (rate limit)
+        sucessos = sum(1 for status in results if status in [200, 401, 429])
         taxa_sucesso = sucessos / len(results)
         
         print(f"\n🎯 STRESS TEST MISTO:")
@@ -287,7 +266,6 @@ class TestPerformanceStress:
         print(f"   - Taxa de sucesso: {taxa_sucesso:.2%}")
         print(f"   - Tempo total: {total_time:.3f}s")
         
-        # Pelo menos 70% deve ser bem-sucedido (considerando rate limiting)
         assert taxa_sucesso >= 0.7, f"Taxa de sucesso muito baixa: {taxa_sucesso:.2%}"
         assert total_time < 15.0, f"Operações mistas muito lentas: {total_time:.3f}s".time()
         response_time = end_time - start_time
@@ -353,7 +331,6 @@ class TestPerformanceLoad:
         
         start_time = time.time()
         
-        # Fazer 10 requisições simultâneas
         with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(fazer_requisicao) for _ in range(10)]
             results = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -361,14 +338,11 @@ class TestPerformanceLoad:
         end_time = time.time()
         total_time = end_time - start_time
         
-        # Verificar se todas as requisições foram bem-sucedidas
         for response in results:
             assert response.status_code == status.HTTP_200_OK
         
-        # Deve completar em menos de 5 segundos
         assert total_time < 5.0, f"10 requisições muito lentas: {total_time:.3f}s"
         
-        # Tempo médio por requisição
         avg_time = total_time / len(results)
         assert avg_time < 1.0, f"Tempo médio muito alto: {avg_time:.3f}s"
 
@@ -377,7 +351,7 @@ class TestPerformanceLoad:
         cadastros_realizados = 0
         tempos_resposta = []
         
-        for i in range(5):  # 5 cadastros sequenciais
+        for i in range(5): 
             user_data = {
                 "login": f"loaduser{i}",
                 "senha": f"LoadPass{i}@",
@@ -396,7 +370,6 @@ class TestPerformanceLoad:
                     cadastros_realizados += 1
                     tempos_resposta.append(response_time)
                 elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-                    # Rate limiting ativo - esperar um pouco
                     time.sleep(1)
                     continue
                 
@@ -404,10 +377,8 @@ class TestPerformanceLoad:
                 print(f"Erro no cadastro {i}: {e}")
                 continue
         
-        # Pelo menos alguns cadastros devem ter funcionado
         assert cadastros_realizados > 0, "Nenhum cadastro foi realizado"
         
-        # Tempo médio não deve ser muito alto
         if tempos_resposta:
             tempo_medio = sum(tempos_resposta) / len(tempos_resposta)
             assert tempo_medio < 3.0, f"Tempo médio de cadastro muito alto: {tempo_medio:.3f}s"
@@ -422,7 +393,7 @@ class TestPerformanceLoad:
         logins_realizados = 0
         tempos_resposta = []
         
-        for i in range(3):  # 3 logins (dentro do rate limit)
+        for i in range(3):
             start_time = time.time()
             
             try:
@@ -434,7 +405,6 @@ class TestPerformanceLoad:
                     logins_realizados += 1
                     tempos_resposta.append(response_time)
                 elif response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
-                    # Rate limiting - parar teste
                     break
                     
             except Exception as e:
@@ -452,13 +422,12 @@ class TestPerformanceDatabase:
     
     def test_listagem_usuarios_com_dados(self, client, admin_auth_headers, db_session):
         """Testa performance da listagem com vários usuários"""
-        # Criar vários usuários para teste de listagem
         from app.models.user import Usuario
         from app.utils.jwt_auth import hash_password
         from datetime import datetime
         
         usuarios_teste = []
-        for i in range(10):  # Criar 10 usuários
+        for i in range(10):
             usuario = Usuario(
                 login=f"perfuser{i}",
                 senha=hash_password("TestPass123@"),
@@ -473,7 +442,6 @@ class TestPerformanceDatabase:
         
         db_session.commit()
         
-        # Testar listagem
         start_time = time.time()
         
         response = client.get("/usuarios", headers=admin_auth_headers)
@@ -533,7 +501,6 @@ class TestPerformanceJWT:
         
         start_time = time.time()
         
-        # Fazer 5 verificações simultâneas
         with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(verificar_token) for _ in range(5)]
             results = [future.result() for future in concurrent.futures.as_completed(futures)]
@@ -541,11 +508,9 @@ class TestPerformanceJWT:
         end_time = time.time()
         total_time = end_time - start_time
         
-        # Todas devem ser bem-sucedidas
         for response in results:
             assert response.status_code == status.HTTP_200_OK
         
-        # Tempo total não deve ser muito alto
         assert total_time < 3.0, f"Verificações múltiplas muito lentas: {total_time:.3f}s"
 
 class TestPerformanceMemory:
@@ -556,11 +521,9 @@ class TestPerformanceMemory:
         import gc
         import sys
         
-        # Forçar garbage collection antes do teste
         gc.collect()
         initial_objects = len(gc.get_objects())
         
-        # Fazer vários cadastros
         for i in range(5):
             user_data = {
                 "login": f"memuser{i}",
@@ -571,21 +534,17 @@ class TestPerformanceMemory:
             
             try:
                 response = client.post("/cadastro", json=user_data)
-                # Não importa se falha por rate limiting
                 if response.status_code == status.HTTP_429_TOO_MANY_REQUESTS:
                     time.sleep(1)
                     continue
             except Exception:
                 continue
         
-        # Forçar garbage collection após testes
         gc.collect()
         final_objects = len(gc.get_objects())
         
-        # Não deve ter um aumento muito grande de objetos
         object_increase = final_objects - initial_objects
         
-        # Permitir algum aumento (estruturas de dados normais)
         assert object_increase < 1000, f"Possível vazamento de memória: {object_increase} novos objetos"
 
 class TestPerformanceRateLimit:
@@ -593,7 +552,6 @@ class TestPerformanceRateLimit:
     
     def test_rate_limit_nao_afeta_performance_normal(self, client):
         """Testa se rate limiting não afeta performance de uso normal"""
-        # Fazer uma requisição normal (dentro do limite)
         start_time = time.time()
         
         response = client.get("/health")
