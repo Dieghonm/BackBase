@@ -1,9 +1,3 @@
-"""
-BACKBASE API - CONSTANTES GLOBAIS
-==================================
-Centraliza todas as constantes da aplicação para manter consistência
-"""
-
 from enum import Enum
 
 # ============================================================================
@@ -67,37 +61,4 @@ MIN_PASSWORD_LENGTH = 8
 DEFAULT_RATE_LIMITS = {
     'LOGIN': '10/minute',
     'CADASTRO': '5/minute'
-}
-
-# ============================================================================
-# METADADOS DA API
-# ============================================================================
-
-API_METADATA = {
-    "title": "BackBase API",
-    "description": """
-    ## 🚀 BackBase API - Sistema de Gerenciamento de Usuários
-    
-    API completa para gerenciamento de usuários com:
-    
-    - ✅ **Autenticação JWT** (válida por 30 dias)
-    - ✅ **Rate Limiting** por IP
-    - ✅ **Validações robustas** 
-    - ✅ **Criptografia de senhas** (bcrypt)
-    - ✅ **Controle de acesso** por tags
-    - ✅ **Documentação interativa**
-    
-    ### 🏷️ Tags de Usuário
-    - **admin**: Acesso total ao sistema
-    - **tester**: Acesso para testes e validações
-    - **cliente**: Usuário final com acesso limitado
-    
-    ### 📦 Planos Disponíveis
-    - **trial**: Plano gratuito com limitações
-    - **mensal**: Plano pago mensal
-    - **trimestral**: Plano pago trimestral
-    - **semestral**: Plano pago semestral
-    - **anual**: Plano pago anual
-    """,
-    "version": "1.0.0"
 }

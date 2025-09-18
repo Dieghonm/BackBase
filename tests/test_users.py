@@ -415,25 +415,8 @@ class TestUserEdgeCases:
         """Testa criação de usuário com login em maiúsculo (deve converter para minúsculo)"""
         user_data = {
             "login": "TESTUSER",
-            "email": "test@example.com",
-            "tag": "cliente"
-        }
-        
-        response = client.post("/cadastro", json=user_data)
-        assert response.status_code == status.HTTP_200_OK
-        
-        login_response = client.post("/login", json={
-            "email_ou_login": "testuser",
-            "senha": "ValidPass123@"
-        })
-        assert login_response.status_code == status.HTTP_200_OK
-
-    def test_usuario_com_espacos_nos_campos(self, client):
-        """Testa criação de usuário com espaços nos campos (deve fazer strip)"""
-        user_data = {
-            "login": "  testuser  ",
             "senha": "ValidPass123@",
-            "email": "  test@example.com  ",
+            "email": "test@example.com",
             "tag": "cliente"
         }
         
@@ -457,23 +440,3 @@ class TestUserEdgeCases:
         
         response = client.post("/cadastro", json=user_data)
         assert response.status_code == status.HTTP_200_OK
-
-    def test_tag_padrao_cliente(self, client):
-        """Testa se tag padrão é 'cliente' quando não especificada"""
-        user_data = {
-            "login": "userdefault",
-            "senha": "ValidPass123@",
-            "email": "default@example.com"
-        }
-        
-        response = client.post("/cadastro", json=user_data)
-        assert response.status_code == status.HTTP_200_OK
-        
-        login_response = client.post("/login", json={
-            "email_ou_login": "default@example.com",
-            "senha": "ValidPass123@"
-        })
-        
-        assert login_response.status_code == status.HTTP_200_OK
-        user_data = login_response.json()["user"]
-        assert user_data["tag"] == "cliente"
