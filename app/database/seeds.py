@@ -67,10 +67,8 @@ def criar_usuarios_iniciais():
                     credencial = None
                     
                     for attempt in range(max_attempts):
-                        temp_credencial = gerar_credencial(u["email"], dias=365)
-                        if verify_credencial_uniqueness(db, temp_credencial):
-                            credencial = temp_credencial
-                            break
+                        credencial = gerar_credencial(u["email"], dias=365)
+                        break
                     
                     if not credencial:
                         logger.error(f"Erro ao gerar credencial única para {u['email']}")

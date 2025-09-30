@@ -64,18 +64,19 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
     
     return len(errors) == 0, errors
 
-def gerar_credencial(email: str, dias: int = 365) -> str:
+def gerar_credencial(email: str, Valid = 15) -> str:
     """
-    Gera uma credencial única para o usuário (válida por 1 ano)
+    Gera uma credencial única para o usuário (válida por 15 dias)
     
     Args:
         email: Email do usuário
-        dias: Validade em dias (padrão 365)
+        dias: Validade em dias (padrão 15)
     
     Returns:
         Credencial SHA256 hexadecimal
     """
-    validade = (datetime.utcnow() + timedelta(days=dias)).isoformat()
+    print(gerar_credencial,'gerar_credencial <-----------------------')
+    validade = (datetime.utcnow() + timedelta(Valid)).isoformat()
     raw = f"{email}-{validade}-{secrets.token_hex(16)}"
     return hashlib.sha256(raw.encode()).hexdigest()
 

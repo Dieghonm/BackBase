@@ -139,7 +139,10 @@ def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = De
 @limiter.limit(settings.rate_limit_login)
 def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
     """Realiza login do usuário e retorna JWT (VÁLIDO POR 1 MÊS)"""
+    print(dados_login,'token aqui aqui <-----------------------')
     try:
+        #primeiro buscar o token
+
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
         if not usuario:
             usuario = buscar_usuario_por_login(db, dados_login.email_ou_login)
@@ -184,25 +187,25 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
         raise HTTPException(status_code=500, detail=f"Erro ao fazer login: {str(e)}")
 
 @app.get("/me")
-def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Retorna informações do usuário autenticado"""
-    try:
-        usuario = buscar_usuario_por_id(db, current_user["user_id"])
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
+# def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     """Retorna informações do usuário autenticado"""
+#     try:
+#         usuario = buscar_usuario_por_id(db, current_user["user_id"])
+#         if not usuario:
+#             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
-        return {
-            "id": usuario.id,
-            "login": usuario.login,
-            "email": usuario.email,
-            "tag": usuario.tag,
-            "plan": usuario.plan,
-            "created_at": usuario.created_at
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
+#         return {
+#             "id": usuario.id,
+#             "login": usuario.login,
+#             "email": usuario.email,
+#             "tag": usuario.tag,
+#             "plan": usuario.plan,
+#             "created_at": usuario.created_at
+#         }
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
 @app.get("/usuarios", response_model=list[UsuarioResponse])
 def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -221,79 +224,79 @@ def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
 
-@app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def buscar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Busca um usuário por ID (requer autenticação)"""
-    try:
-        if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin", "tester"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado: você só pode ver seus próprios dados"
-            )
+# @app.get("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+# def buscar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     """Busca um usuário por ID (requer autenticação)"""
+#     try:
+#         if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin", "tester"]:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Acesso negado: você só pode ver seus próprios dados"
+#             )
         
-        usuario = buscar_usuario_por_id(db, usuario_id)
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        return usuario
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
+#         usuario = buscar_usuario_por_id(db, usuario_id)
+#         if not usuario:
+#             raise HTTPException(status_code=404, detail="Usuário não encontrado")
+#         return usuario
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Erro ao buscar usuário: {str(e)}")
 
-@app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
-def atualizar_usuario_endpoint(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Atualiza dados de um usuário (requer autenticação)"""
-    try:
-        if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin"]:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado: você só pode atualizar seus próprios dados"
-            )
+# @app.put("/usuarios/{usuario_id}", response_model=UsuarioResponse)
+# def atualizar_usuario_endpoint(usuario_id: int, dados: dict, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     """Atualiza dados de um usuário (requer autenticação)"""
+#     try:
+#         if current_user["user_id"] != usuario_id and current_user["tag"] not in ["admin"]:
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Acesso negado: você só pode atualizar seus próprios dados"
+#             )
         
-        if "senha" in dados:
-            dados["senha"] = hash_password(dados["senha"])
+#         if "senha" in dados:
+#             dados["senha"] = hash_password(dados["senha"])
         
-        usuario = atualizar_usuario(db, usuario_id, dados)
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        return usuario
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
+#         usuario = atualizar_usuario(db, usuario_id, dados)
+#         if not usuario:
+#             raise HTTPException(status_code=404, detail="Usuário não encontrado")
+#         return usuario
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
 
-@app.delete("/usuarios/{usuario_id}")
-def deletar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Deleta um usuário (apenas admins)"""
-    try:
-        if current_user["tag"] != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Acesso negado: apenas admins podem deletar usuários"
-            )
+# @app.delete("/usuarios/{usuario_id}")
+# def deletar_usuario_endpoint(usuario_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+#     """Deleta um usuário (apenas admins)"""
+#     try:
+#         if current_user["tag"] != "admin":
+#             raise HTTPException(
+#                 status_code=status.HTTP_403_FORBIDDEN,
+#                 detail="Acesso negado: apenas admins podem deletar usuários"
+#             )
         
-        usuario = deletar_usuario(db, usuario_id)
-        if not usuario:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
+#         usuario = deletar_usuario(db, usuario_id)
+#         if not usuario:
+#             raise HTTPException(status_code=404, detail="Usuário não encontrado")
+#         return {"sucesso": True, "mensagem": "Usuário deletado com sucesso"}
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
-@app.get("/rate-limit-status")
-def get_rate_limit_status(request: Request):
-    """Endpoint para verificar status atual do rate limiting"""
-    client_ip = get_remote_address(request)
-    return {
-        "client_ip": client_ip,
-        "rate_limits": {
-            "login": settings.rate_limit_login,
-            "cadastro": settings.rate_limit_cadastro
-        },
-        "message": "Rate limiting está ativo",
-        "info": "As limitações se aplicam por IP address"
-    }
+# @app.get("/rate-limit-status")
+# def get_rate_limit_status(request: Request):
+#     """Endpoint para verificar status atual do rate limiting"""
+#     client_ip = get_remote_address(request)
+#     return {
+#         "client_ip": client_ip,
+#         "rate_limits": {
+#             "login": settings.rate_limit_login,
+#             "cadastro": settings.rate_limit_cadastro
+#         },
+#         "message": "Rate limiting está ativo",
+#         "info": "As limitações se aplicam por IP address"
+#     }
 
 def main():
     print("FastAPI app configurado com sucesso!")

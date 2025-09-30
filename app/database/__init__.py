@@ -5,7 +5,6 @@ def criar_tabelas():
     """
     Função que cria as tabelas no banco
     """
-    from ..models.user import Usuario
     
     print("🚀 Criando tabelas no banco de dados...")
     Base.metadata.create_all(bind=engine)
@@ -32,7 +31,7 @@ def criar_usuarios_iniciais():
         for u in usuarios_iniciais:
             if not db.query(Usuario).filter_by(email=u["email"]).first():
                 senha_hashada = hash_password(u["senha"])
-                credencial = gerar_credencial(u["email"], dias=365)
+                credencial = gerar_credencial(u["email"], valid = 30)
                 
                 usuario = Usuario(
                     login=u["login"],
@@ -79,3 +78,6 @@ __all__ = [
     'criar_usuarios_iniciais',
     'inicializar_banco'
 ]
+
+
+# Totalmente revizado!

@@ -19,7 +19,7 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
         if login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
-        credencial = gerar_credencial(usuario.email, dias=365)
+        credencial = gerar_credencial(usuario)
         
         senha_final = usuario.senha
         if not senha_final.startswith('$2b$'):
