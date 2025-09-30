@@ -41,21 +41,41 @@ class UsuarioCreate(BaseModel):
         if v not in VALID_USER_PLANS:
             raise ValueError(f'Plan deve ser um de: {", ".join(VALID_USER_PLANS)}')
         return v
-
 class LoginRequest(BaseModel):
-    email_ou_login: str
-    senha: str
+    """Schema para login com credenciais OU token"""
+    email_ou_login: Optional[str] = None
+    senha: Optional[str] = None
+    token: Optional[str] = None
+    
+    @validator('token')
+    def validate_inputs(cls, v, values):
+        """Valida que PELO MENOS um método foi fornecido"""
+        email_ou_login = values.get('email_ou_login')
+        senha = values.get('senha')
+        
+        # Caso 1: Login com token
+        if v:
+            if email_ou_login or senha:
+                raise ValueError('Forneça apenas TOKEN ou EMAIL/SENHA, não ambos')
+            return v.strip()
+        
+        # Caso 2: Login com credenciais
+        if not email_ou_login or not senha:
+            raise ValueError('Forneça TOKEN ou EMAIL/SENHA')
+        
+        return v
     
     @validator('email_ou_login')
     def validate_email_ou_login(cls, v):
-        v = v.strip().lower()
-        if len(v) < 3:
-            raise ValueError('Email ou login deve ter pelo menos 3 caracteres')
+        if v:
+            v = v.strip().lower()
+            if len(v) < 3:
+                raise ValueError('Email ou login deve ter pelo menos 3 caracteres')
         return v
     
     @validator('senha')
     def validate_senha(cls, v):
-        if len(v) < 1:
+        if v and len(v) < 1:
             raise ValueError('Senha é obrigatória')
         return v
 

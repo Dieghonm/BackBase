@@ -138,11 +138,49 @@ def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = De
 @app.post("/login", response_model=TokenResponse)
 @limiter.limit(settings.rate_limit_login)
 def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
-    """Realiza login do usuário e retorna JWT (VÁLIDO POR 1 MÊS)"""
-    print(dados_login,'token aqui aqui <-----------------------')
     try:
-        #primeiro buscar o token
-
+        if dados_login.token:
+            try:
+                user_data = get_user_from_token(dados_login.token)
+                
+                usuario = buscar_usuario_por_id(db, user_data["user_id"])
+                
+                if not usuario:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Usuário não encontrado"
+                    )
+                
+                token_data = create_user_token_data(
+                    user_id=usuario.id,
+                    email=usuario.email,
+                    login=usuario.login,
+                    tag=usuario.tag
+                )
+                
+                access_token = create_access_token(data=token_data)
+                
+                return TokenResponse(
+                    access_token=access_token,
+                    token_type="bearer",
+                    expires_in=2628000,
+                    token_duration="1_month",
+                    user={
+                        "id": usuario.id,
+                        "login": usuario.login,
+                        "email": usuario.email,
+                        "tag": usuario.tag,
+                        "credencial": usuario.credencial,
+                        "auth_method": "token_renewal"
+                    }
+                )
+                
+            except HTTPException as e:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=str(e.detail)
+                )
+        
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
         if not usuario:
             usuario = buscar_usuario_por_login(db, dados_login.email_ou_login)
@@ -178,13 +216,18 @@ def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depen
                 "login": usuario.login,
                 "email": usuario.email,
                 "tag": usuario.tag,
-                "credencial": usuario.credencial
+                "credencial": usuario.credencial,
+                "auth_method": "credentials"
             }
         )
+        
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao fazer login: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Erro ao fazer login: {str(e)}"
+        )
 
 @app.get("/me")
 # def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
