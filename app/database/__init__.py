@@ -15,7 +15,7 @@ def criar_usuarios_iniciais():
     Cria usuários iniciais se eles não existirem
     """
     from ..models.user import Usuario
-    from ..utils.jwt_auth import hash_password, gerar_credencial
+    from ..utils.jwt_auth import hash_password
     from datetime import datetime
     
     usuarios_iniciais = [
@@ -31,7 +31,6 @@ def criar_usuarios_iniciais():
         for u in usuarios_iniciais:
             if not db.query(Usuario).filter_by(email=u["email"]).first():
                 senha_hashada = hash_password(u["senha"])
-                credencial = gerar_credencial(u["email"], valid = 30)
                 
                 usuario = Usuario(
                     login=u["login"],
@@ -40,7 +39,6 @@ def criar_usuarios_iniciais():
                     senha=senha_hashada,
                     plan="admin",
                     plan_date=datetime.utcnow(),
-                    credencial=credencial,
                     created_at=datetime.utcnow()
                 )
                 db.add(usuario)
@@ -78,6 +76,3 @@ __all__ = [
     'criar_usuarios_iniciais',
     'inicializar_banco'
 ]
-
-
-# Totalmente revizado!

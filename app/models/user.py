@@ -12,5 +12,4 @@ class Usuario(Base):
     tag = Column(String, nullable=False, default="cliente")
     plan = Column(String, nullable=True)
     plan_date = Column(DateTime, nullable=True)
-    credencial = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

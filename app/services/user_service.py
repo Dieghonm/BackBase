@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..models.user import Usuario
 from ..schemas.schemas import UsuarioCreate
-from ..utils.jwt_auth import hash_password, gerar_credencial
+from ..utils.jwt_auth import hash_password
 from datetime import datetime
 from fastapi import HTTPException
 
@@ -19,8 +19,6 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
         if login_existente:
             raise HTTPException(status_code=400, detail="Login já está em uso")
         
-        credencial = gerar_credencial(usuario)
-        
         senha_final = usuario.senha
         if not senha_final.startswith('$2b$'):
             senha_final = hash_password(senha_final)
@@ -32,7 +30,6 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
             tag=usuario.tag,
             plan=usuario.plan,
             plan_date=datetime.utcnow() if usuario.plan else None,
-            credencial=credencial,
             created_at=datetime.utcnow()
         )
         
@@ -50,7 +47,7 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao criar usuário: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar usuárioooo: {str(e)}")
 
 def listar_usuarios(db: Session):
     """Lista todos os usuários ativos"""

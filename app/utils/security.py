@@ -64,22 +64,6 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
     
     return len(errors) == 0, errors
 
-def gerar_credencial(email: str, Valid = 15) -> str:
-    """
-    Gera uma credencial única para o usuário (válida por 15 dias)
-    
-    Args:
-        email: Email do usuário
-        dias: Validade em dias (padrão 15)
-    
-    Returns:
-        Credencial SHA256 hexadecimal
-    """
-    print(gerar_credencial,'gerar_credencial <-----------------------')
-    validade = (datetime.utcnow() + timedelta(Valid)).isoformat()
-    raw = f"{email}-{validade}-{secrets.token_hex(16)}"
-    return hashlib.sha256(raw.encode()).hexdigest()
-
 def verify_credencial_uniqueness(db_session, credencial: str) -> bool:
     """
     Verifica se a credencial é única no banco de dados

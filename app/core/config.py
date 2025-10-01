@@ -88,7 +88,16 @@ class Settings(BaseSettings):
         """Configuração de CORS baseada no ambiente"""
         if self.environment == "development":
             return [
+                "http://localhost:3000",
                 "http://localhost:8000",
+                "http://localhost:8080", 
+                "http://localhost:8081",
+                "http://localhost:5173",
+                "http://127.0.0.1:3000",
+                "http://127.0.0.1:8080",
+                "http://127.0.0.1:8081",
+                "exp://192.168.1.1:19000",
+                "http://192.168.1.1:8081",
             ]
         else:
             cors_env = os.environ.get("CORS_ORIGINS", "")
@@ -98,9 +107,12 @@ class Settings(BaseSettings):
                     return json.loads(cors_env)
                 except:
                     return [origin.strip() for origin in cors_env.split(",")]
-
+            
+            # Fallback para produção
             return [
-                "https://localhost:3000"
+                "https://seu-frontend.vercel.app",  # Substitua pelo seu domínio
+                "https://seu-app.netlify.app",     # Substitua pelo seu domínio
+                "https://localhost:3000"           # Para testes locais
             ]
 
     @property
@@ -114,6 +126,7 @@ class Settings(BaseSettings):
         if "sqlite" in self.database_url:
             return {"check_same_thread": False}
         else:
+            # PostgreSQL/MySQL configs para produção
             return {
                 "pool_size": 10,
                 "max_overflow": 20,
@@ -142,7 +155,3 @@ print(f"   - Debug: {settings.debug}")
 print(f"   - Database: {settings.database_url[:20]}...")
 print(f"   - Host: {settings.host}:{settings.port}")
 print(f"   - CORS Origins: {len(settings.cors_origins_safe)} origens configuradas")
-
-
-
-# ----- revizado -----

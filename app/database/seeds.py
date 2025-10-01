@@ -1,6 +1,6 @@
 from datetime import datetime
 from .session import SessionLocal
-from ..utils.security import hash_password, gerar_credencial, verify_credencial_uniqueness
+from ..utils.security import hash_password
 import logging
 
 logger = logging.getLogger('app.database.seeds')
@@ -63,17 +63,6 @@ def criar_usuarios_iniciais():
                 if not usuario_existente:
                     senha_hashada = hash_password(u["senha"])
                     
-                    max_attempts = 5
-                    credencial = None
-                    
-                    for attempt in range(max_attempts):
-                        credencial = gerar_credencial(u["email"], dias=365)
-                        break
-                    
-                    if not credencial:
-                        logger.error(f"Erro ao gerar credencial única para {u['email']}")
-                        continue
-                    
                     usuario = Usuario(
                         login=u["login"].lower().strip(),
                         email=u["email"].lower().strip(),
@@ -81,7 +70,6 @@ def criar_usuarios_iniciais():
                         senha=senha_hashada,
                         plan=u["plan"],
                         plan_date=datetime.utcnow(),
-                        credencial=credencial,
                         created_at=datetime.utcnow()
                     )
                     

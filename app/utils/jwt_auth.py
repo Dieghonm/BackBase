@@ -3,7 +3,6 @@ from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import HTTPException, status
 from ..core.config import settings
-from .security import hash_password, verify_password, gerar_credencial
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 43200
 ACCESS_TOKEN_EXPIRE_SECONDS = 2592000

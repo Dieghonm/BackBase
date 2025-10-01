@@ -52,6 +52,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def gerar_token_para_usuario(usuario) -> str:
+    """Cria e retorna um access token JWT para o usuário."""
+    token_data = create_user_token_data(
+        user_id=usuario.id,
+        email=usuario.email,
+        login=usuario.login,
+        tag=usuario.tag
+    )
+    return create_access_token(data=token_data)
+
+
+def montar_resposta_token(usuario, token: str, auth_method: str) -> dict:
+    """Monta a resposta padronizada com token e dados do usuário."""
+    return {
+        "access_token": token,
+        "user": {
+            "login": usuario.login,
+        }
+    }
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     limit_value = str(exc.detail).split(" ")[0] if hasattr(exc, "detail") else "N/A"
@@ -109,127 +130,88 @@ def health_check():
 
 @app.post("/cadastro", response_model=dict)
 @limiter.limit(settings.rate_limit_cadastro)
-def cadastrar_usuario(request: Request, usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    """Cadastra um novo usuário (Rate Limit: 3 tentativas por minuto)"""
+def cadastrar_usuario(
+    request: Request,
+    usuario: UsuarioCreate,
+    db: Session = Depends(get_db)
+):
+    """Cadastra um novo usuário (Rate Limit: 3/min)"""
     try:
-        usuario_existente = buscar_usuario_por_email(db, usuario.email)
-        if usuario_existente:
+        if buscar_usuario_por_email(db, usuario.email):
             raise HTTPException(status_code=400, detail="Email já cadastrado")
-        
-        usuario_login_existente = buscar_usuario_por_login(db, usuario.login)
-        if usuario_login_existente:
+
+        if buscar_usuario_por_login(db, usuario.login):
             raise HTTPException(status_code=400, detail="Login já está em uso")
-        
+
         usuario.senha = hash_password(usuario.senha)
-        
         novo_usuario = criar_usuario(db, usuario)
+
+        token = gerar_token_para_usuario(novo_usuario)
+        resposta = montar_resposta_token(novo_usuario, token, auth_method="registration")
+
         return {
             "sucesso": True,
-            "id": novo_usuario.id,
-            "credencial": novo_usuario.credencial,
+            "message": "Usuário criado com sucesso",
             "created_at": novo_usuario.created_at,
-            "message": "Usuário criado com sucesso"
+            **resposta
         }
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
 
+
 @app.post("/login", response_model=TokenResponse)
 @limiter.limit(settings.rate_limit_login)
-def fazer_login(request: Request, dados_login: LoginRequest, db: Session = Depends(get_db)):
+def fazer_login(
+    request: Request,
+    dados_login: LoginRequest,
+    db: Session = Depends(get_db)
+):
     try:
         if dados_login.token:
             try:
                 user_data = get_user_from_token(dados_login.token)
-                
                 usuario = buscar_usuario_por_id(db, user_data["user_id"])
-                
+
                 if not usuario:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Usuário não encontrado"
                     )
-                
-                token_data = create_user_token_data(
-                    user_id=usuario.id,
-                    email=usuario.email,
-                    login=usuario.login,
-                    tag=usuario.tag
-                )
-                
-                access_token = create_access_token(data=token_data)
-                
-                return TokenResponse(
-                    access_token=access_token,
-                    token_type="bearer",
-                    expires_in=2628000,
-                    token_duration="1_month",
-                    user={
-                        "id": usuario.id,
-                        "login": usuario.login,
-                        "email": usuario.email,
-                        "tag": usuario.tag,
-                        "credencial": usuario.credencial,
-                        "auth_method": "token_renewal"
-                    }
-                )
-                
+
+                token = gerar_token_para_usuario(usuario)
+                return montar_resposta_token(usuario, token, auth_method="token_renewal")
+
             except HTTPException as e:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail=str(e.detail)
                 )
-        
-        usuario = buscar_usuario_por_email(db, dados_login.email_ou_login)
+
+        usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
+                  or buscar_usuario_por_login(db, dados_login.email_ou_login)
+
         if not usuario:
-            usuario = buscar_usuario_por_login(db, dados_login.email_ou_login)
-        
-        if not usuario:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usuário não encontrado"
-            )
-        
+            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+
         if not verify_password(dados_login.senha, usuario.senha):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Senha incorreta"
-            )
-        
-        token_data = create_user_token_data(
-            user_id=usuario.id,
-            email=usuario.email,
-            login=usuario.login,
-            tag=usuario.tag
-        )
-        
-        access_token = create_access_token(data=token_data)
-        
-        return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            expires_in=2628000,
-            token_duration="1_month",
-            user={
-                "id": usuario.id,
-                "login": usuario.login,
-                "email": usuario.email,
-                "tag": usuario.tag,
-                "credencial": usuario.credencial,
-                "auth_method": "credentials"
-            }
-        )
-        
+            raise HTTPException(status_code=401, detail="Senha incorreta")
+
+        token = gerar_token_para_usuario(usuario)
+        return montar_resposta_token(usuario, token, auth_method="credentials")
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Erro ao fazer login: {str(e)}"
         )
 
-@app.get("/me")
+
+# @app.get("/me")
 # def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
 #     """Retorna informações do usuário autenticado"""
 #     try:
