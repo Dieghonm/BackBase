@@ -37,6 +37,13 @@ USER_PLANS = {
     'SEMESTRAL': 'semestral',
     'ANUAL': 'anual'
 }
+PLANS_TIME = {
+    "trial": 15,
+    "mensal": 30,
+    "trimestral": 90,
+    "semestral": 180,
+    "anual": 365,
+}
 
 VALID_USER_PLANS = list(USER_PLANS.values())
 

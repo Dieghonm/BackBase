@@ -41,6 +41,7 @@ class UsuarioCreate(BaseModel):
         if v not in VALID_USER_PLANS:
             raise ValueError(f'Plan deve ser um de: {", ".join(VALID_USER_PLANS)}')
         return v
+
 class LoginRequest(BaseModel):
     """Schema para login com credenciais OU token"""
     email_ou_login: Optional[str] = None
@@ -95,9 +96,8 @@ class UsuarioResponse(BaseModel):
 class TokenResponse(BaseModel):
     """Resposta do endpoint de login com JWT (válido por 1 mês EXATO)"""
     access_token: str
-    token_type: str = "bearer"
-    expires_in: int = 2592000
     token_duration: str = "1_month"
+    timing: int
     user: dict
 
 class TokenData(BaseModel):

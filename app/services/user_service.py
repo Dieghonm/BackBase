@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from ..models.user import Usuario
 from ..schemas.schemas import UsuarioCreate
-from ..utils.jwt_auth import hash_password
+from ..utils.jwt_auth import hash_password, verify_password
 from datetime import datetime
 from fastapi import HTTPException
 
@@ -37,7 +37,6 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
         db.commit()
         db.refresh(db_usuario)
         
-        print(f"✅ Usuário criado: {db_usuario.login} ({db_usuario.email})")
         return db_usuario
         
     except IntegrityError as e:
@@ -47,25 +46,30 @@ def criar_usuario(db: Session, usuario: UsuarioCreate):
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Erro ao criar usuárioooo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao criar usuário: {str(e)}")
+
 
 def listar_usuarios(db: Session):
     """Lista todos os usuários ativos"""
     return db.query(Usuario).all()
 
+
 def buscar_usuario_por_id(db: Session, usuario_id: int):
     """Busca usuário por ID"""
     return db.query(Usuario).filter(Usuario.id == usuario_id).first()
+
 
 def buscar_usuario_por_email(db: Session, email: str):
     """Busca usuário por email"""
     email = email.lower().strip()
     return db.query(Usuario).filter(Usuario.email == email).first()
 
+
 def buscar_usuario_por_login(db: Session, login: str):
     """Busca usuário por login"""
     login = login.lower().strip()
     return db.query(Usuario).filter(Usuario.login == login).first()
+
 
 def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
     """
@@ -112,6 +116,7 @@ def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao atualizar usuário: {str(e)}")
 
+
 def deletar_usuario(db: Session, usuario_id: int):
     """Deleta um usuário permanentemente"""
     try:
@@ -125,13 +130,12 @@ def deletar_usuario(db: Session, usuario_id: int):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
+
 def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: str) -> bool:
     """
     Altera a senha de um usuário após verificar a senha atual
     """
     try:
-        from ..utils.jwt_auth import verify_password, hash_password
-        
         usuario = buscar_usuario_por_id(db, usuario_id)
         if not usuario:
             return False

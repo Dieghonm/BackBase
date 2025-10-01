@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from ..models.user import Usuario
-from ..utils.security import verify_password
+from ..utils.jwt_auth import verify_password
 from .user_service import buscar_usuario_por_email, buscar_usuario_por_login
+
 
 def autenticar_usuario(db: Session, email_ou_login: str, senha: str) -> Usuario | None:
     """
@@ -16,6 +17,7 @@ def autenticar_usuario(db: Session, email_ou_login: str, senha: str) -> Usuario 
         Objeto Usuario se autenticação for bem-sucedida, None caso contrário
     """
     usuario = buscar_usuario_por_email(db, email_ou_login)
+
     if not usuario:
         usuario = buscar_usuario_por_login(db, email_ou_login)
     

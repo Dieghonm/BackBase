@@ -1,39 +1,7 @@
 from passlib.context import CryptContext
-import hashlib
-import secrets
-from datetime import datetime, timedelta
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-def hash_password(password: str) -> str:
-    """
-    Cria um hash seguro da senha usando bcrypt via passlib
     
-    Args:
-        password: Senha em texto plano
-        
-    Returns:
-        Hash da senha como string
-    """
-    return pwd_context.hash(password)
-
-def verify_password(password: str, hashed_password: str) -> bool:
-    """
-    Verifica se uma senha corresponde ao hash armazenado
-    
-    Args:
-        password: Senha em texto plano fornecida pelo usuário
-        hashed_password: Hash da senha armazenado no banco
-        
-    Returns:
-        True se a senha estiver correta, False caso contrário
-    """
-    try:
-        return pwd_context.verify(password, hashed_password)
-    except Exception as e:
-        print(f"Erro ao verificar senha: {e}")
-        return False
-
 def is_password_strong(password: str) -> tuple[bool, list[str]]:
     """
     Verifica se a senha atende aos critérios de segurança
@@ -63,6 +31,7 @@ def is_password_strong(password: str) -> tuple[bool, list[str]]:
         errors.append("Senha deve ter pelo menos um caractere especial")
     
     return len(errors) == 0, errors
+
 
 def verify_credencial_uniqueness(db_session, credencial: str) -> bool:
     """

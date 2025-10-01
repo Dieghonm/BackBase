@@ -2,10 +2,47 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from jose import JWTError, jwt
 from fastapi import HTTPException, status
+from passlib.context import CryptContext
 from ..core.config import settings
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 43200
-ACCESS_TOKEN_EXPIRE_SECONDS = 2592000
+# Contexto de hash de senha (bcrypt)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Constantes de expiração
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 30 dias
+ACCESS_TOKEN_EXPIRE_SECONDS = 2592000  # 30 dias em segundos
+
+
+def hash_password(password: str) -> str:
+    """
+    Cria um hash seguro da senha usando bcrypt
+    
+    Args:
+        password: Senha em texto plano
+        
+    Returns:
+        Hash da senha como string
+    """
+    return pwd_context.hash(password)
+
+
+def verify_password(password: str, hashed_password: str) -> bool:
+    """
+    Verifica se uma senha corresponde ao hash armazenado
+    
+    Args:
+        password: Senha em texto plano fornecida pelo usuário
+        hashed_password: Hash da senha armazenado no banco
+        
+    Returns:
+        True se a senha estiver correta, False caso contrário
+    """
+    try:
+        return pwd_context.verify(password, hashed_password)
+    except Exception as e:
+        print(f"Erro ao verificar senha: {e}")
+        return False
+
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -34,13 +71,13 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
     
     try:
         encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
-        print(f"🎯 Token criado com expiração: {expire.strftime('%d/%m/%Y %H:%M:%S')} (1 mês)")
         return encoded_jwt
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao criar token: {str(e)}"
         )
+
 
 def verify_token(token: str) -> Dict[str, Any]:
     """
@@ -84,6 +121,7 @@ def verify_token(token: str) -> Dict[str, Any]:
             detail=f"Erro ao verificar token: {str(e)}"
         )
 
+
 def get_user_from_token(token: str) -> Dict[str, Any]:
     """
     Extrai informações do usuário do token
@@ -95,7 +133,6 @@ def get_user_from_token(token: str) -> Dict[str, Any]:
         Dados do usuário do token
     """
     payload = verify_token(token)
-    
     return {
         "user_id": payload.get("user_id"),
         "email": payload.get("email"),
@@ -104,6 +141,7 @@ def get_user_from_token(token: str) -> Dict[str, Any]:
         "token_duration": payload.get("token_duration", "1_month"),
         "token_version": payload.get("token_version", "1.0")
     }
+
 
 def create_user_token_data(user_id: int, email: str, login: str, tag: str) -> Dict[str, Any]:
     """
@@ -126,14 +164,3 @@ def create_user_token_data(user_id: int, email: str, login: str, tag: str) -> Di
         "token_type": "access",
         "created_at": datetime.utcnow().isoformat()
     }
-
-class TokenResponse:
-    """
-    Resposta do endpoint de login com JWT (válido por 1 mês)
-    Valores corrigidos para 30 dias exatos
-    """
-    access_token: str
-    token_type: str = "bearer"
-    expires_in: int = ACCESS_TOKEN_EXPIRE_SECONDS  
-    token_duration: str = "1_month"
-    user: dict
