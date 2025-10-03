@@ -54,13 +54,11 @@ class LoginRequest(BaseModel):
         email_ou_login = values.get('email_ou_login')
         senha = values.get('senha')
         
-        # Caso 1: Login com token
         if v:
             if email_ou_login or senha:
                 raise ValueError('Forneça apenas TOKEN ou EMAIL/SENHA, não ambos')
             return v.strip()
         
-        # Caso 2: Login com credenciais
         if not email_ou_login or not senha:
             raise ValueError('Forneça TOKEN ou EMAIL/SENHA')
         
@@ -87,17 +85,18 @@ class UsuarioResponse(BaseModel):
     tag: str
     plan: Optional[str]
     plan_date: Optional[datetime]
-    credencial: Optional[str]
+    credencial: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
 
 class TokenResponse(BaseModel):
-    """Resposta do endpoint de login com JWT (válido por 1 mês EXATO)"""
+    """Resposta do endpoint de login com JWT"""
     access_token: str
-    token_duration: str = "1_month"
-    timing: int
+    token_type: str
+    token_duration: int
+    expires: int
     user: dict
 
 class TokenData(BaseModel):

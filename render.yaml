@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: backbase-api
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        value: sqlite:///./banco.db
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 43200
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: 43200
+      - key: API_VERSION
+        value: 1.0.0
+      - key: API_TITLE
+        value: BackBase API
+      - key: RATE_LIMIT_LOGIN
+        value: 10/minute
+      - key: RATE_LIMIT_CADASTRO
+        value: 5/minute
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CORS_ORIGINS
+        value: '["https://seu-frontend.vercel.app","https://seu-app.netlify.app"]'
+      - key: CREATE_INITIAL_USERS
+        value: true
+
+    healthCheckPath: /health
+    
+    autoDeploy: true

@@ -29,6 +29,7 @@ from .services import (
     autenticar_usuario
 )
 from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -59,22 +60,39 @@ PLANOS = {
     "trimestral": 90,
     "semestral": 180,
     "anual": 365,
+    "admin": 36500,  # 100 anos para admin
 }
 
-def dias_restantes(usuario):
+def calcular_dias_restantes(usuario) -> int:
     """Calcula dias restantes do plano do usuário"""
-    plan = usuario.plan.lower()
-    plan_date = usuario.plan_date
+    try:
+        plan = usuario.plan.lower() if usuario.plan else "trial"
+        plan_date = usuario.plan_date
+        
+        if not plan_date:
+            return 0
+        
+        if plan not in PLANOS:
+            return 0
+        
+        duracao = PLANOS[plan]
+        fim = plan_date + timedelta(days=duracao)
+        hoje = datetime.now()
+        
+        dias = (fim - hoje).days
+        return max(dias, 0)
+    except Exception as e:
+        print(f"Erro ao calcular dias restantes: {e}")
+        return 0
 
-    if plan not in PLANOS:
-        raise ValueError(f"Plano '{plan}' não é válido")
-
-    duracao = PLANOS[plan]
-    fim = plan_date + timedelta(days=duracao)
-    hoje = datetime.now()
-
-    dias = (fim - hoje).days
-    return max(dias, 0)
+def obter_duracao_plano(usuario) -> int:
+    """Retorna a duração total do plano em dias"""
+    try:
+        plan = usuario.plan.lower() if usuario.plan else "trial"
+        return PLANOS.get(plan, 30)
+    except Exception as e:
+        print(f"Erro ao obter duração do plano: {e}")
+        return 30
 
 def gerar_token_para_usuario(usuario) -> str:
     """Cria e retorna um access token JWT para o usuário."""
@@ -86,11 +104,16 @@ def gerar_token_para_usuario(usuario) -> str:
     )
     return create_access_token(data=token_data)
 
-def montar_resposta_token(usuario, token: str, timing, auth_method: str) -> dict:
+def montar_resposta_token(usuario, token: str) -> dict:
     """Monta a resposta padronizada com token e dados do usuário."""
+    dias_restantes = calcular_dias_restantes(usuario)
+    duracao_total = obter_duracao_plano(usuario)
+    
     return {
         "access_token": token,
-        "timing": timing,
+        "token_type": "bearer",
+        "token_duration": duracao_total,
+        "expires": dias_restantes,
         "user": {
             "login": usuario.login,
         }
@@ -158,7 +181,7 @@ def cadastrar_usuario(
     usuario: UsuarioCreate,
     db: Session = Depends(get_db)
 ):
-    """Cadastra um novo usuário (Rate Limit: 3/min)"""
+    """Cadastra um novo usuário (Rate Limit: 5/min)"""
     try:
         if buscar_usuario_por_email(db, usuario.email):
             raise HTTPException(status_code=400, detail="Email já cadastrado")
@@ -169,9 +192,8 @@ def cadastrar_usuario(
         usuario.senha = hash_password(usuario.senha)
         novo_usuario = criar_usuario(db, usuario)
 
-        timing = dias_restantes(novo_usuario)
         token = gerar_token_para_usuario(novo_usuario)
-        resposta = montar_resposta_token(novo_usuario, token, timing, auth_method="registration")
+        resposta = montar_resposta_token(novo_usuario, token)
 
         return {
             "sucesso": True,
@@ -194,6 +216,8 @@ def fazer_login(
 ):
     """Endpoint de login com suporte a token renewal e credenciais"""
     try:
+        usuario = None
+        
         # Login via token (renewal)
         if dados_login.token:
             try:
@@ -206,29 +230,25 @@ def fazer_login(
                         detail="Usuário não encontrado"
                     )
 
-                timing = dias_restantes(usuario)
-                token = gerar_token_para_usuario(usuario)
-                return montar_resposta_token(usuario, token, timing, auth_method="token_renewal")
-
             except HTTPException as e:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail=str(e.detail)
                 )
+        else:
+            # Login via credenciais (email/login + senha)
+            usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
+                      or buscar_usuario_por_login(db, dados_login.email_ou_login)
 
-        # Login via credenciais (email/login + senha)
-        usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
-                  or buscar_usuario_por_login(db, dados_login.email_ou_login)
+            if not usuario:
+                raise HTTPException(status_code=401, detail="Usuário não encontrado")
 
-        if not usuario:
-            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+            if not verify_password(dados_login.senha, usuario.senha):
+                raise HTTPException(status_code=401, detail="Senha incorreta")
 
-        if not verify_password(dados_login.senha, usuario.senha):
-            raise HTTPException(status_code=401, detail="Senha incorreta")
-
-        timing = dias_restantes(usuario)
+        # Gerar token e montar resposta
         token = gerar_token_para_usuario(usuario)
-        return montar_resposta_token(usuario, token, timing, auth_method="credentials")
+        return montar_resposta_token(usuario, token)
 
     except HTTPException:
         raise
@@ -246,12 +266,18 @@ def get_current_user_info(current_user: dict = Depends(get_current_user), db: Se
         if not usuario:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         
+        dias_restantes = calcular_dias_restantes(usuario)
+        duracao_total = obter_duracao_plano(usuario)
+        
         return {
             "id": usuario.id,
             "login": usuario.login,
             "email": usuario.email,
             "tag": usuario.tag,
             "plan": usuario.plan,
+            "plan_date": usuario.plan_date,
+            "token_duration": duracao_total,
+            "expires": dias_restantes,
             "created_at": usuario.created_at
         }
     except HTTPException:
