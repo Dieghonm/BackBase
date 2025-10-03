@@ -6,6 +6,7 @@ services:
     plan: free
     branch: main
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # 🔧 COMANDO CORRIGIDO - USAR UVICORN, NÃO GUNICORN!
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: ENVIRONMENT
@@ -38,10 +39,10 @@ services:
         value: 5/minute
       - key: LOG_LEVEL
         value: INFO
-      - key: CREATE_INITIAL_USERS
-        value: true
       - key: CORS_ORIGINS
         value: '["*"]'
+      - key: CREATE_INITIAL_USERS
+        value: true
 
     healthCheckPath: /health
     
