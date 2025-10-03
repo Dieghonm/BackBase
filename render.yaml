@@ -38,10 +38,10 @@ services:
         value: 5/minute
       - key: LOG_LEVEL
         value: INFO
-      - key: CORS_ORIGINS
-        value: '["https://seu-frontend.vercel.app","https://seu-app.netlify.app"]'
       - key: CREATE_INITIAL_USERS
         value: true
+      - key: CORS_ORIGINS
+        value: '["*"]'
 
     healthCheckPath: /health
     
