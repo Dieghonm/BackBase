@@ -13,3 +13,5 @@ class Usuario(Base):
     plan = Column(String, nullable=True)
     plan_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    temp_senha = Column(String, nullable=True)
+    temp_senha_expira = Column(DateTime, nullable=True)

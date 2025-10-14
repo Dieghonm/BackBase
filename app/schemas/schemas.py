@@ -45,6 +45,7 @@ class UsuarioCreate(BaseModel):
 class LoginRequest(BaseModel):
     """Schema para login com credenciais OU token"""
     email_ou_login: Optional[str] = None
+    tempKey: Optional[int] = None
     senha: Optional[str] = None
     token: Optional[str] = None
     
@@ -132,3 +133,7 @@ class PasswordChangeRequest(BaseModel):
         if len(v) < MIN_PASSWORD_LENGTH:
             raise ValueError(f'Nova senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v
+    
+class TempKeyResponse(BaseModel):
+    """Resposta do endpoint de tempkey"""
+    tempkey: int

@@ -8,8 +8,9 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from .database import get_db, inicializar_banco
-from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse
+from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse, TempKeyResponse
 from .core.config import settings
+import random
 from .utils.jwt_auth import (
     create_access_token, 
     verify_token, 
@@ -218,7 +219,6 @@ def fazer_login(
     try:
         usuario = None
         
-        # Login via token (renewal)
         if dados_login.token:
             try:
                 user_data = get_user_from_token(dados_login.token)
@@ -236,7 +236,6 @@ def fazer_login(
                     detail=str(e.detail)
                 )
         else:
-            # Login via credenciais (email/login + senha)
             usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
                       or buscar_usuario_por_login(db, dados_login.email_ou_login)
 
@@ -246,7 +245,6 @@ def fazer_login(
             if not verify_password(dados_login.senha, usuario.senha):
                 raise HTTPException(status_code=401, detail="Senha incorreta")
 
-        # Gerar token e montar resposta
         token = gerar_token_para_usuario(usuario)
         return montar_resposta_token(usuario, token)
 
@@ -301,6 +299,55 @@ def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
+    
+@app.post("/tempkey", response_model=TempKeyResponse)
+@limiter.limit(settings.rate_limit_tempkey)
+def LostPassword(
+    request: Request,
+    dados_login: LoginRequest,
+    db: Session = Depends(get_db)
+):
+    """Endpoint de geração de senha provisória"""
+
+    try:
+        usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
+            or buscar_usuario_por_login(db, dados_login.email_ou_login)
+        
+        if not usuario:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuário não encontrado"
+            )
+        if dados_login.tempKey:
+
+            print(dados_login.tempKey,  '<------------------------------------------')
+
+            return {"tempkey": dados_login.tempKey}
+        else:
+            tempkey = str(random.randint(1000, 9999))
+            hashKey = hash_password(tempkey)
+
+            expires = datetime.utcnow() + timedelta(minutes=15)
+
+            temp_key_db = atualizar_usuario(
+                db,
+                usuario.id,
+                {'temp_senha': hashKey, 'temp_senha_expira': expires}
+            )
+            print(f"mandar por email: {tempkey}")
+
+        return {"tempkey": tempkey}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erro ao fazer login: {str(e)}"
+        )
+
+
+
 
 def main():
     print("FastAPI app configurado com sucesso!")

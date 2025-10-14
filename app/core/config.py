@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     # Rate limiting
     rate_limit_login: str = os.environ.get("RATE_LIMIT_LOGIN", DEFAULT_RATE_LIMITS['LOGIN'])
     rate_limit_cadastro: str = os.environ.get("RATE_LIMIT_CADASTRO", DEFAULT_RATE_LIMITS['CADASTRO'])
+    rate_limit_tempkey: str = os.environ.get("RATE_LIMIT_TEMKEY", DEFAULT_RATE_LIMITS['TEMPKEY'])
     
     # Logs
     log_level: str = os.environ.get("LOG_LEVEL", "INFO")
