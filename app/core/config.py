@@ -83,6 +83,12 @@ class Settings(BaseSettings):
     # Servidor
     port: Optional[int] = int(os.environ.get("PORT", "8000"))
     host: Optional[str] = os.environ.get("HOST", "0.0.0.0")
+
+    brevo_api_key: str = os.environ.get("BREVO_API_KEY", "")
+    brevo_sender_email: str = os.environ.get("BREVO_SENDER_EMAIL", "noreply@backbase.com")
+    brevo_sender_name: str = os.environ.get("BREVO_SENDER_NAME", "BackBase API")
+    email_enabled: bool = os.environ.get("EMAIL_ENABLED", "true").lower() == "true"
+    
     
     @property
     def cors_origins_safe(self) -> List[str]:

@@ -10,6 +10,8 @@ from slowapi.middleware import SlowAPIMiddleware
 from .database import get_db, inicializar_banco
 from .schemas.schemas import UsuarioCreate, UsuarioResponse, LoginRequest, TokenResponse, TempKeyResponse
 from .core.config import settings
+from .services.email_service import get_email_service
+
 import random
 from .utils.jwt_auth import (
     create_access_token, 
@@ -307,9 +309,14 @@ def LostPassword(
     dados_login: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    """Endpoint de geração de senha provisória"""
+    """
+    Endpoint de recuperação de senha - Envia código por email
+    
+    Rate Limit: 4 requisições/hora
+    """
 
     try:
+        # Buscar usuário
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
             or buscar_usuario_por_login(db, dados_login.email_ou_login)
         
@@ -318,35 +325,99 @@ def LostPassword(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuário não encontrado"
             )
+        
+        # Se recebeu tempKey para validação
         if dados_login.tempKey:
-
-            print(dados_login.tempKey,  '<------------------------------------------')
-
-            return {"tempkey": dados_login.tempKey}
+            print(f"🔍 Validando tempKey: {dados_login.tempKey}")
+            print(f"📦 Temp senha armazenada: {usuario.temp_senha}")
+            
+            # Verificar se o tempKey coincide com temp_senha
+            if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
+                # Verificar se expirou
+                if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
+                    print("✅ TempKey válido e dentro do prazo!")
+                    return {
+                        "tempkey": dados_login.tempKey,
+                        "message": "Código validado com sucesso"
+                    }
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Código expirado"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Código inválido"
+                )
+        
+        # Gerar novo tempkey
         else:
             tempkey = str(random.randint(1000, 9999))
             hashKey = hash_password(tempkey)
-
             expires = datetime.utcnow() + timedelta(minutes=15)
 
+            # Atualizar usuário no banco
             temp_key_db = atualizar_usuario(
                 db,
                 usuario.id,
-                {'temp_senha': hashKey, 'temp_senha_expira': expires}
+                {
+                    'temp_senha': hashKey, 
+                    'temp_senha_expira': expires
+                }
             )
-            print(f"mandar por email: {tempkey}")
+            
+            print(f"✅ TempKey gerado para {usuario.login}: {tempkey}")
+            print(f"⏱️  Expira em 15 minutos: {expires}")
 
-        return {"tempkey": tempkey}
+            # ============================================================================
+            # ENVIAR EMAIL COM BREVO
+            # ============================================================================
+            email_service = get_email_service()
+            
+            if email_service and settings.email_enabled:
+                print(f"📧 Iniciando envio de email para {usuario.email}...")
+                
+                email_enviado = email_service.enviar_tempkey(
+                    email=usuario.email,
+                    login=usuario.login,
+                    tempkey=tempkey
+                )
+                
+                if email_enviado:
+                    print(f"✅ Email enviado com sucesso para {usuario.email}!")
+                    return {
+                        "tempkey": None,  # Não retorna o código, foi enviado por email
+                        "message": f"Código de recuperação enviado para {usuario.email}",
+                        "email_sent": True,
+                        "expires_in": "15 minutos"
+                    }
+                else:
+                    print(f"❌ Falha ao enviar email para {usuario.email}")
+                    # Não falha a requisição, mas avisa o usuário
+                    return {
+                        "tempkey": tempkey,  # Retorna para fallback
+                        "message": "Falha ao enviar email. Código exibido como fallback.",
+                        "email_sent": False,
+                        "warning": "Houve um problema ao enviar o email. Tente novamente."
+                    }
+            else:
+                # Fallback quando email não está configurado
+                print(f"⚠️  Email desabilitado ou não configurado. Retornando tempkey para debug.")
+                return {
+                    "tempkey": tempkey,
+                    "message": "Serviço de email não configurado (dev mode)",
+                    "email_sent": False
+                }
 
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Erro geral: {str(e)}")
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao fazer login: {str(e)}"
+            detail=f"Erro ao processar recuperação de senha: {str(e)}"
         )
-
-
 
 
 def main():

@@ -136,4 +136,8 @@ class PasswordChangeRequest(BaseModel):
     
 class TempKeyResponse(BaseModel):
     """Resposta do endpoint de tempkey"""
-    tempkey: int
+    tempkey: Optional[int] = None
+    message: str
+    email_sent: bool = False
+    expires_in: Optional[str] = None
+    warning: Optional[str] = None
