@@ -140,9 +140,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 def startup_event():
     """Executa na inicialização da aplicação"""
     inicializar_banco()
-    print("🚦 Rate Limiting configurado:")
-    print(f"   - Login: {settings.rate_limit_login}")
-    print(f"   - Cadastro: {settings.rate_limit_cadastro}")
+
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
@@ -316,62 +314,36 @@ def LostPassword(
     """
 
     try:
-        print("\n")
-        print("="*60)
-        print("INICIANDO RECUPERACAO DE SENHA")
-        print("="*60)
-        print(f"Email/Login fornecido: {dados_login.email_ou_login}")
-        print(f"TempKey fornecido: {dados_login.tempKey}")
-        print(f"Token fornecido: {bool(dados_login.token)}")
-        
-        # Buscar usuario
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
             or buscar_usuario_por_login(db, dados_login.email_ou_login)
         
         if not usuario:
-            print(f"ERRO: Usuario nao encontrado: {dados_login.email_ou_login}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario nao encontrado"
             )
         
-        print(f"OK: Usuario encontrado: {usuario.login}")
-        
-        # Se recebeu tempKey para validacao
         if dados_login.tempKey:
-            print(f"\nVALIDANDO TEMPKEY: {dados_login.tempKey}")
-            print(f"Temp senha armazenada: {usuario.temp_senha}")
-            
-            # Verificar se o tempKey coincide com temp_senha
             if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
-                # Verificar se expirou
                 if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
-                    print("OK: TempKey valido e dentro do prazo!")
                     return {
                         "tempkey": dados_login.tempKey,
                         "message": "Codigo validado com sucesso"
                     }
                 else:
-                    print("ERRO: Codigo expirado")
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
                         detail="Codigo expirado"
                     )
             else:
-                print("ERRO: Codigo invalido")
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Codigo invalido"
                 )
-        
-        # Gerar novo tempkey
         else:
-            print("\nGERANDO NOVO TEMPKEY...")
             tempkey = str(random.randint(1000, 9999))
             hashKey = hash_password(tempkey)
             expires = datetime.utcnow() + timedelta(minutes=15)
-
-            # Atualizar usuario no banco
             atualizar_usuario(
                 db,
                 usuario.id,
@@ -380,53 +352,26 @@ def LostPassword(
                     'temp_senha_expira': expires
                 }
             )
-            
-            print(f"OK: TempKey gerado: {tempkey}")
-            print(f"OK: Expira em 15 minutos: {expires}")
-
-            # ============================================================================
-            # ENVIAR EMAIL COM BREVO
-            # ============================================================================
-            print(f"\n" + "="*60)
-            print("ENVIANDO EMAIL COM BREVO")
-            print("="*60)
-            print(f"Email habilitado: {settings.email_enabled}")
-            print(f"API Key configurada: {bool(settings.brevo_api_key)}")
-            
             email_service = get_email_service()
-            
             if not email_service:
-                print("ERRO: Email service nao inicializado")
-                print("CAUSA: BREVO_API_KEY nao configurada no .env")
                 return {
                     "tempkey": tempkey,
                     "message": "BREVO_API_KEY nao configurada no .env",
                     "email_sent": False,
                     "warning": "Configure BREVO_API_KEY para enviar emails"
                 }
-            
             if not settings.email_enabled:
-                print("ERRO: Email desabilitado (EMAIL_ENABLED=false)")
                 return {
                     "tempkey": tempkey,
                     "message": "Servico de email desabilitado",
                     "email_sent": False,
                 }
-            
-            print(f"Enviando para: {usuario.email}")
-            print(f"Nome do usuario: {usuario.login}")
-            print(f"Codigo: {tempkey}")
-            
             email_enviado = email_service.enviar_tempkey(
                 email=usuario.email,
                 login=usuario.login,
                 tempkey=tempkey
             )
-            
-            print(f"\n" + "="*60)
             if email_enviado:
-                print("OK: EMAIL ENVIADO COM SUCESSO!")
-                print("="*60)
                 return {
                     "tempkey": None,
                     "message": f"Codigo de recuperacao enviado para {usuario.email}",
@@ -434,8 +379,6 @@ def LostPassword(
                     "expires_in": "15 minutos"
                 }
             else:
-                print("ERRO: Falha ao enviar email!")
-                print("="*60)
                 return {
                     "tempkey": tempkey,
                     "message": "Falha ao enviar email. Codigo exibido como fallback.",

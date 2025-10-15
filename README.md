@@ -1,4 +1,4 @@
-# 🚀 BackBase API
+# 🚀 Enden Map
 
 <div align="center">
 
@@ -36,7 +36,7 @@
 
 ## 🎯 Sobre o Projeto
 
-BackBase API é uma solução completa e production-ready para gerenciamento de usuários, construída com FastAPI e seguindo as melhores práticas de desenvolvimento de APIs RESTful.
+Enden Map é uma solução completa e production-ready para gerenciamento de usuários, construída com FastAPI e seguindo as melhores práticas de desenvolvimento de APIs RESTful.
 
 ### Diferencial
 

@@ -5,10 +5,7 @@ def criar_tabelas():
     """
     Função que cria as tabelas no banco
     """
-    
-    print("🚀 Criando tabelas no banco de dados...")
     Base.metadata.create_all(bind=engine)
-    print("✅ Tabelas criadas com sucesso!")
 
 def criar_usuarios_iniciais():
     """
@@ -42,12 +39,7 @@ def criar_usuarios_iniciais():
                     created_at=datetime.utcnow()
                 )
                 db.add(usuario)
-                print(f"Usuário inicial criado: {u['login']} ({u['email']})")
-            else:
-                print(f"Usuário já existe: {u['login']} ({u['email']})")
-        
         db.commit()
-        print("✅ Usuários iniciais criados/verificados com sucesso!")
         
     except Exception as e:
         print(f"❌ Erro ao criar usuários iniciais: {str(e)}")
@@ -61,10 +53,8 @@ def inicializar_banco():
     1. Cria tabelas
     2. Cria usuários iniciais
     """
-    print("🚀 Inicializando banco de dados...")
     criar_tabelas()
     criar_usuarios_iniciais()
-    print("✅ Banco inicializado com sucesso!")
 
 __all__ = [
     'Base',

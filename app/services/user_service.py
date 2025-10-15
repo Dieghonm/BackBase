@@ -108,6 +108,7 @@ def atualizar_usuario(db: Session, usuario_id: int, dados: dict):
         
         db.commit()
         db.refresh(db_usuario)
+        
         return db_usuario
         
     except HTTPException:

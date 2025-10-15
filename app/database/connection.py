@@ -5,13 +5,11 @@ from ..core.config import settings
 DATABASE_URL = settings.database_url
 
 if "sqlite" in DATABASE_URL:
-    print("🔧 Usando SQLite")
     engine = create_engine(
         DATABASE_URL, 
         connect_args={"check_same_thread": False}
     )
 else:
-    print("🐘 Usando PostgreSQL/MySQL")
     engine_config = {
         "pool_size": 10,
         "max_overflow": 20,
@@ -23,5 +21,6 @@ else:
     engine = create_engine(DATABASE_URL, **engine_config)
 
 Base = declarative_base()
+
 
 print(f"✅ Banco configurado: {DATABASE_URL[:30]}...")
