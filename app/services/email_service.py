@@ -30,7 +30,7 @@ class BrevoEmailService:
         destinatario: str,
         assunto: str,
         corpo_html: str,
-        remetente_email: str = "noreply@backbase.com",
+        remetente_email: str = "duo.estudio.tech@gmail.com",
         remetente_nome: str = "BackBase API"
     ) -> bool:
         """
@@ -100,7 +100,7 @@ class BrevoEmailService:
         Returns:
             True se enviado com sucesso
         """
-        assunto = "🔐 Seu Código de Recuperação de Senha - BackBase"
+        assunto = "🔐 Seu Código de Recuperação de Senha - Eden Map"
         print(email, tempkey, '<-----------------')
         corpo_html = f"""
         <html>
@@ -178,7 +178,7 @@ class BrevoEmailService:
             <body>
                 <div class="container">
                     <div class="header">
-                        <h1>🔐 BackBase API</h1>
+                        <h1>🔐 Eden Map</h1>
                         <p>Recuperação de Senha</p>
                     </div>
                     
@@ -209,7 +209,7 @@ class BrevoEmailService:
                     </div>
                     
                     <div class="footer">
-                        <p>© 2025 BackBase API. Todos os direitos reservados.</p>
+                        <p>© 2025 Eden Map API. Todos os direitos reservados.</p>
                         <p>Este é um email automático, não responda.</p>
                     </div>
                 </div>
