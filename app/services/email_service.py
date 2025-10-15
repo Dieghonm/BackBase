@@ -47,6 +47,7 @@ class BrevoEmailService:
             True se enviado com sucesso, False caso contrário
         """
         try:
+            print(destinatario,remetente_email, '<---------------------------------')
             url = f"{self.BASE_URL}/smtp/email"
             
             payload = {
@@ -63,10 +64,11 @@ class BrevoEmailService:
                 "subject": assunto,
                 "htmlContent": corpo_html
             }
-            
+            print(self.headers,'<----------------')
             response = requests.post(url, json=payload, headers=self.headers, timeout=10)
-            
+
             if response.status_code in [200, 201]:
+                print('dentro')
                 logger.info(f"✅ Email enviado com sucesso para {destinatario}")
                 logger.debug(f"Response: {response.json()}")
                 return True
@@ -99,8 +101,7 @@ class BrevoEmailService:
             True se enviado com sucesso
         """
         assunto = "🔐 Seu Código de Recuperação de Senha - BackBase"
-        
-        # Template HTML profissional
+        print(email, tempkey, '<-----------------')
         corpo_html = f"""
         <html>
             <head>
@@ -223,7 +224,6 @@ class BrevoEmailService:
         )
 
 
-# Factory function para criar instância do serviço
 def get_email_service() -> Optional[BrevoEmailService]:
     """
     Cria uma instância do BrevoEmailService se a API key estiver configurada
