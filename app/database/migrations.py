@@ -14,7 +14,6 @@ def criar_tabelas():
     
     Base.metadata.create_all(bind=engine)
     print("Tabelas criadas/verificadas com sucesso!")
-    
     print(f"🔧 Configurações carregadas do .env:")
     print(f"   - Database: {settings.database_url}")
     print(f"   - Debug Mode: {settings.debug}")

@@ -495,3 +495,4 @@ def get_email_service() -> Optional[BrevoEmailService]:
         return None
     
     return BrevoEmailService(api_key)
+

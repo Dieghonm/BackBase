@@ -132,6 +132,40 @@ def deletar_usuario(db: Session, usuario_id: int):
         raise HTTPException(status_code=500, detail=f"Erro ao deletar usuário: {str(e)}")
 
 
+def enviar_email_boas_vindas(usuario, plan: str = "trial"):
+    """
+    Envia email de boas-vindas após cadastro
+    
+    Args:
+        usuario: Objeto Usuario criado
+        plan: Plano do usuário
+    """
+    try:
+        from .email_service import get_email_service
+        
+        email_service = get_email_service()
+        if not email_service:
+            print(f"⚠️  Email service não configurado. Saltando email para {usuario.email}")
+            return False
+        
+        sucesso = email_service.enviar_boas_vindas(
+            email=usuario.email,
+            login=usuario.login,
+            plan=plan or "trial"
+        )
+        
+        if sucesso:
+            print(f"✅ Email de boas-vindas enviado para {usuario.email}")
+        else:
+            print(f"❌ Falha ao enviar email para {usuario.email}")
+        
+        return sucesso
+        
+    except Exception as e:
+        print(f"❌ Erro ao enviar email: {str(e)}")
+        return False
+
+
 def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: str) -> bool:
     """
     Altera a senha de um usuário após verificar a senha atual

@@ -63,7 +63,7 @@ PLANOS = {
     "trimestral": 90,
     "semestral": 180,
     "anual": 365,
-    "admin": 36500,  # 100 anos para admin
+    "admin": 36500,
 }
 
 def calcular_dias_restantes(usuario) -> int:
@@ -193,6 +193,17 @@ def cadastrar_usuario(
         usuario.senha = hash_password(usuario.senha)
         novo_usuario = criar_usuario(db, usuario)
 
+        try:
+            email_service = get_email_service()
+            if email_service:
+                email_service.enviar_boas_vindas(
+                    email=novo_usuario.email,
+                    login=novo_usuario.login,
+                    plan=novo_usuario.plan or "trial"
+                )
+        except Exception as e:
+            print(f"⚠️  Erro ao enviar email: {str(e)}")
+
         token = gerar_token_para_usuario(novo_usuario)
         resposta = montar_resposta_token(novo_usuario, token)
 
@@ -207,6 +218,7 @@ def cadastrar_usuario(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro interno: {str(e)}")
+
 
 @app.post("/login", response_model=TokenResponse)
 @limiter.limit(settings.rate_limit_login)
