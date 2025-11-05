@@ -185,3 +185,65 @@ def alterar_senha(db: Session, usuario_id: int, senha_atual: str, senha_nova: st
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro ao alterar senha: {str(e)}")
+    
+
+def recuperar_senha(
+    db: Session, 
+    email_ou_login: str, 
+    tempkey: str, 
+    nova_senha: str
+) -> tuple[bool, str]:
+    """
+    Altera a senha de um usuário usando o tempkey como validação
+    
+    Args:
+        db: Sessão do banco de dados
+        email_ou_login: Email ou login do usuário
+        tempkey: Código de 4 dígitos enviado por email
+        nova_senha: Nova senha em texto plano
+    
+    Returns:
+        Tupla (sucesso: bool, mensagem: str)
+    """
+    try:
+        # 1. Buscar o usuário
+        usuario = buscar_usuario_por_email(db, email_ou_login)
+        if not usuario:
+            usuario = buscar_usuario_por_login(db, email_ou_login)
+        
+        if not usuario:
+            return False, "Usuário não encontrado"
+        
+        # 2. Validar se existe temp_senha e temp_senha_expira
+        if not usuario.temp_senha or not usuario.temp_senha_expira:
+            return False, "Nenhuma solicitação de recuperação de senha ativa"
+        
+        # 3. Validar se o tempkey ainda está válido
+        if datetime.utcnow() > usuario.temp_senha_expira:
+            # Limpar o tempkey expirado
+            usuario.temp_senha = None
+            usuario.temp_senha_expira = None
+            db.commit()
+            return False, "Código de recuperação expirado. Solicite um novo."
+        
+        # 4. Validar o tempkey comparando com o hash armazenado
+        if not verify_password(tempkey, usuario.temp_senha):
+            return False, "Código de recuperação inválido"
+        
+        # 5. Hash da nova senha
+        senha_hashada = hash_password(nova_senha)
+        
+        # 6. Atualizar a senha e limpar o tempkey
+        usuario.senha = senha_hashada
+        usuario.temp_senha = None
+        usuario.temp_senha_expira = None
+        
+        db.commit()
+        db.refresh(usuario)
+        
+        return True, "Senha alterada com sucesso"
+        
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Erro ao recuperar senha: {str(e)}")
+        return False, f"Erro ao alterar senha: {str(e)}"

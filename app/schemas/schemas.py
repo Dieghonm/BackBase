@@ -47,6 +47,7 @@ class LoginRequest(BaseModel):
     tempKey: Optional[str] = None
     senha: Optional[str] = None
     token: Optional[str] = None
+    new_password: Optional[str] = None  # ← ADICIONE ESTA LINHA
     
     @validator('email_ou_login')
     def validate_email_ou_login(cls, v):
@@ -62,28 +63,35 @@ class LoginRequest(BaseModel):
             raise ValueError('Senha eh obrigatoria')
         return v
     
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if v and len(v) < 8:
+            raise ValueError('Nova senha deve ter pelo menos 8 caracteres')
+        return v
+    
     @validator('token')
     def validate_inputs(cls, v, values):
         email_ou_login = values.get('email_ou_login')
         senha = values.get('senha')
         tempKey = values.get('tempKey')
+        new_password = values.get('new_password')
         
         if v:
-            if email_ou_login or senha or tempKey:
+            if email_ou_login or senha or tempKey or new_password:
                 raise ValueError('Forneca apenas TOKEN ou EMAIL SENHA ou EMAIL TEMPKEY')
             return v.strip()
         
         if tempKey is not None:
             if not email_ou_login:
                 raise ValueError('Email ou login eh obrigatorio para validar tempKey')
-            if senha:
-                raise ValueError('Nao forneca senha ao validar tempKey')
             return v
         
         if email_ou_login and senha:
             return v
         
-        raise ValueError('Forneca TOKEN ou EMAIL SENHA ou EMAIL TEMPKEY')
+        raise ValueError('Forneca TOKEN ou EMAIL SENHA ou EMAIL TEMPKEY ou EMAIL TEMPKEY NEW_PASSWORD')
+
+
 
 class UsuarioResponse(BaseModel):
     id: int
@@ -135,7 +143,39 @@ class PasswordChangeRequest(BaseModel):
         if len(v) < MIN_PASSWORD_LENGTH:
             raise ValueError(f'Nova senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
         return v
+
+class PasswordRecoveryRequest(BaseModel):
+    """Schema para a requisição de alteração de senha com tempKey"""
+    email_ou_login: str
+    tempKey: str
+    new_password: str
     
+    @validator('email_ou_login')
+    def validate_email_ou_login(cls, v):
+        if not v or len(v.strip()) < 3:
+            raise ValueError('Email ou login deve ter pelo menos 3 caracteres')
+        return v.lower().strip()
+    
+    @validator('tempKey')
+    def validate_tempkey(cls, v):
+        if not v or len(v) != 4 or not v.isdigit():
+            raise ValueError('TempKey deve ser um código de 4 dígitos')
+        return v
+    
+    @validator('new_password')
+    def validate_new_password(cls, v):
+        if len(v) < MIN_PASSWORD_LENGTH:
+            raise ValueError(f'Senha deve ter pelo menos {MIN_PASSWORD_LENGTH} caracteres')
+        return v
+
+
+class PasswordRecoveryResponse(BaseModel):
+    """Schema para a resposta de alteração de senha"""
+    sucesso: bool
+    message: str
+    email: Optional[str] = None
+    updated_at: Optional[datetime] = None
+ 
 class TempKeyResponse(BaseModel):
     tempkey: Optional[str] = None
     message: str

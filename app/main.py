@@ -309,72 +309,68 @@ def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
     
-@app.post("/tempkey", response_model=TempKeyResponse)
+
+@app.post("/tempkey", response_model=dict)
 @limiter.limit(settings.rate_limit_tempkey)
-def LostPassword(
+def recuperar_senha_endpoint(
     request: Request,
     dados_login: LoginRequest,
     db: Session = Depends(get_db)
 ):
     """
-    Endpoint de recuperacao de senha - Envia codigo por email
+    Endpoint de recuperação de senha - 3 estágios
     
-    Rate Limit: 10 requisicoes/hora
+    Estágio 1: Enviar email (email_ou_login apenas)
+    Estágio 2: Validar código (email_ou_login + tempKey)
+    Estágio 3: Alterar senha (email_ou_login + tempKey + new_password)
+    
+    Rate Limit: 10 requisições/hora
     """
-
     try:
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
             or buscar_usuario_por_login(db, dados_login.email_ou_login)
+        
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Usuario nao encontrado"
+                detail="Usuário não encontrado"
             )
 
-        if dados_login.tempKey:
-            if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
-                print(dados_login.tempKey, 'tempKey <----------------------------------------')
-                if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
-                    return {
-                        "tempkey": dados_login.tempKey,
-                        "message": "Codigo validado com sucesso"
-                    }
-                else:
-                    raise HTTPException(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        detail="Codigo expirado"
-                    )
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Codigo invalido"
-                )
-        else:
+        # ========== ESTÁGIO 1: ENVIAR EMAIL COM CÓDIGO ==========
+        if not dados_login.tempKey and not dados_login.senha and not dados_login.new_password:
+            print("📧 Estágio 1: Enviando email com código...")
+            
             tempkey = str(random.randint(1000, 9999))
             hashKey = hash_password(tempkey)
             expires = datetime.utcnow() + timedelta(minutes=15)
+            
             atualizar_usuario(
                 db,
                 usuario.id,
                 {
-                    'temp_senha': hashKey, 
+                    'temp_senha': hashKey,
                     'temp_senha_expira': expires
                 }
             )
+            
             email_service = get_email_service()
             if not email_service:
                 return {
                     "tempkey": tempkey,
-                    "message": "BREVO_API_KEY nao configurada no .env",
+                    "message": "BREVO_API_KEY não configurada no .env",
                     "email_sent": False,
-                    "warning": "Configure BREVO_API_KEY para enviar emails"
+                    "warning": "Configure BREVO_API_KEY para enviar emails",
+                    "stage": 1
                 }
+            
             if not settings.email_enabled:
                 return {
                     "tempkey": tempkey,
-                    "message": "Servico de email desabilitado",
+                    "message": "Serviço de email desabilitado",
                     "email_sent": False,
+                    "stage": 1
                 }
+            
             email_enviado = email_service.enviar_tempkey(
                 email=usuario.email,
                 login=usuario.login,
@@ -384,28 +380,113 @@ def LostPassword(
             if email_enviado:
                 return {
                     "tempkey": None,
-                    "message": f"Codigo de recuperacao enviado para {usuario.email}",
+                    "message": f"Código de recuperação enviado para {usuario.email}",
                     "email_sent": True,
-                    "expires_in": "15 minutos"
+                    "expires_in": "15 minutos",
+                    "stage": 1
                 }
             else:
                 return {
                     "tempkey": tempkey,
-                    "message": "Falha ao enviar email. Codigo exibido como fallback.",
+                    "message": "Falha ao enviar email. Código exibido como fallback.",
                     "email_sent": False,
-                    "warning": "Houve um problema ao enviar o email. Tente novamente."
+                    "warning": "Houve um problema ao enviar o email. Tente novamente.",
+                    "stage": 1
                 }
 
+        # ========== ESTÁGIO 2: VALIDAR CÓDIGO (SEM nova senha) ==========
+        elif dados_login.tempKey and not dados_login.new_password:
+            print("✅ Estágio 2: Validando código...")
+            
+            if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
+                if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
+                    return {
+                        "tempkey": dados_login.tempKey,
+                        "message": "Código validado com sucesso",
+                        "stage": 2,
+                        "next_action": "Envie a nova senha no próximo request"
+                    }
+                else:
+                    raise HTTPException(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        detail="Código expirado"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Código inválido"
+                )
+
+        # ========== ESTÁGIO 3: ALTERAR SENHA ==========
+        elif dados_login.tempKey and dados_login.new_password:
+            print("🔐 Estágio 3: Alterando senha...")
+            print(f"Tempkey recebido: {dados_login.tempKey}")
+            print(f"Nova senha recebida: {dados_login.new_password}")
+            
+            # Validar se o tempkey ainda existe
+            if not usuario.temp_senha:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Nenhuma solicitação de recuperação ativa"
+                )
+            
+            # Validar expiração
+            if usuario.temp_senha_expira and datetime.utcnow() > usuario.temp_senha_expira:
+                usuario.temp_senha = None
+                usuario.temp_senha_expira = None
+                db.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Código expirado. Solicite um novo."
+                )
+            
+            # Validar o tempkey
+            if not verify_password(str(dados_login.tempKey), usuario.temp_senha):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Código inválido"
+                )
+            
+            # ✅ Alterar a senha
+            try:
+                nova_senha_hash = hash_password(dados_login.new_password)
+                
+                usuario.senha = nova_senha_hash
+                usuario.temp_senha = None
+                usuario.temp_senha_expira = None
+                
+                db.commit()
+                db.refresh(usuario)
+                
+                print("✅ Senha alterada com sucesso!")
+                
+                return {
+                    "sucesso": True,
+                    "message": "Senha alterada com sucesso! Faça login com sua nova senha.",
+                    "email": usuario.email,
+                    "updated_at": datetime.utcnow().isoformat(),
+                    "stage": 3,
+                    "next_action": "Faça login com suas novas credenciais"
+                }
+                
+            except Exception as e:
+                db.rollback()
+                print(f"❌ Erro ao alterar senha: {str(e)}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Erro ao alterar senha: {str(e)}"
+                )
+
     except HTTPException as e:
-        print(f"\nERRO HTTP: {e.detail}")
+        print(f"\n❌ ERRO HTTP: {e.detail}")
         raise
     except Exception as e:
-        print(f"\nERRO GERAL: {str(e)}")
+        print(f"\n❌ ERRO GERAL: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(
             status_code=500,
-            detail=f"Erro ao processar recuperacao de senha: {str(e)}"
+            detail=f"Erro ao processar recuperação de senha: {str(e)}"
         )
 
 def main():
