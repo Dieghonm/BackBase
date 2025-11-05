@@ -1,4 +1,4 @@
-# 🚀 Enden Map
+# 🚀 Eden Map
 
 <div align="center">
 
@@ -36,7 +36,7 @@
 
 ## 🎯 Sobre o Projeto
 
-Enden Map é uma solução completa e production-ready para gerenciamento de usuários, construída com FastAPI e seguindo as melhores práticas de desenvolvimento de APIs RESTful.
+Eden Map é uma solução completa e production-ready para gerenciamento de usuários, construída com FastAPI e seguindo as melhores práticas de desenvolvimento de APIs RESTful.
 
 ### Diferencial
 
@@ -119,7 +119,7 @@ app/
 ### Princípios Arquiteturais
 
 - **Separation of Concerns**: Cada módulo tem uma responsabilidade única
-- **Dependency Injection**: Uso de FastAPI's Depends
+- **DepEdency Injection**: Uso de FastAPI's Depends
 - **Schema Validation**: Pydantic para validação em tempo de execução
 - **Service Layer Pattern**: Lógica de negócio isolada dos endpoints
 

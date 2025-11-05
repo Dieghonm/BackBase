@@ -31,7 +31,7 @@ class BrevoEmailService:
         assunto: str,
         corpo_html: str,
         remetente_email: str = "duo.estudio.tech@gmail.com",
-        remetente_nome: str = "Enden Map"
+        remetente_nome: str = "Eden Map"
     ) -> bool:
         """
         Envia um email simples através do Brevo
@@ -489,7 +489,6 @@ def get_email_service() -> Optional[BrevoEmailService]:
         BrevoEmailService ou None se não configurado
     """
     api_key = settings.brevo_api_key
-    print('dentro <----------------------------------------')
     if not api_key:
         logger.warning("⚠️  BREVO_API_KEY não configurada no .env")
         return None

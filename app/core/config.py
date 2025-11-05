@@ -71,7 +71,7 @@ class Settings(BaseSettings):
 
     debug: bool = os.environ.get("DEBUG", "false").lower() == "true"
     api_version: str = os.environ.get("API_VERSION", "1.0.0")
-    api_title: str = os.environ.get("API_TITLE", "Enden Map")
+    api_title: str = os.environ.get("API_TITLE", "Eden Map")
 
     rate_limit_login: str = os.environ.get("RATE_LIMIT_LOGIN", DEFAULT_RATE_LIMITS['LOGIN'])
     rate_limit_cadastro: str = os.environ.get("RATE_LIMIT_CADASTRO", DEFAULT_RATE_LIMITS['CADASTRO'])

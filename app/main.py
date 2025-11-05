@@ -141,7 +141,7 @@ def startup_event():
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
-    Dependency para verificar JWT e retornar usuário atual
+    DepEdency para verificar JWT e retornar usuário atual
     """
     token = credentials.credentials
     user_data = get_user_from_token(token)
@@ -332,8 +332,8 @@ def LostPassword(
             )
 
         if dados_login.tempKey:
-            print(dados_login.tempKey, 'tempKey <----------------------------------------')
             if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
+                print(dados_login.tempKey, 'tempKey <----------------------------------------')
                 if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
                     return {
                         "tempkey": dados_login.tempKey,
