@@ -15,7 +15,6 @@ from .services.email_service import get_email_service
 import random
 from .utils.jwt_auth import (
     create_access_token, 
-    verify_token, 
     get_user_from_token,
     create_user_token_data,
     hash_password,
@@ -28,8 +27,6 @@ from .services import (
     buscar_usuario_por_email,
     buscar_usuario_por_login,
     atualizar_usuario,
-    deletar_usuario,
-    autenticar_usuario
 )
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -322,20 +319,20 @@ def LostPassword(
     """
     Endpoint de recuperacao de senha - Envia codigo por email
     
-    Rate Limit: 4 requisicoes/hora
+    Rate Limit: 10 requisicoes/hora
     """
 
     try:
         usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
             or buscar_usuario_por_login(db, dados_login.email_ou_login)
-        
         if not usuario:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Usuario nao encontrado"
             )
-        
+
         if dados_login.tempKey:
+            print(dados_login.tempKey, 'tempKey <----------------------------------------')
             if usuario.temp_senha and verify_password(str(dados_login.tempKey), usuario.temp_senha):
                 if usuario.temp_senha_expira and datetime.utcnow() <= usuario.temp_senha_expira:
                     return {
@@ -383,6 +380,7 @@ def LostPassword(
                 login=usuario.login,
                 tempkey=tempkey
             )
+
             if email_enviado:
                 return {
                     "tempkey": None,

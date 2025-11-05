@@ -68,5 +68,5 @@ MIN_PASSWORD_LENGTH = 8
 DEFAULT_RATE_LIMITS = {
     'LOGIN': '10/minute',
     'CADASTRO': '5/minute',
-    'TEMPKEY': '4/hour'
+    'TEMPKEY': '1000/hour'
 }

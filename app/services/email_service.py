@@ -489,7 +489,7 @@ def get_email_service() -> Optional[BrevoEmailService]:
         BrevoEmailService ou None se não configurado
     """
     api_key = settings.brevo_api_key
-    
+    print('dentro <----------------------------------------')
     if not api_key:
         logger.warning("⚠️  BREVO_API_KEY não configurada no .env")
         return None
