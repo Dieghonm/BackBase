@@ -12,8 +12,8 @@ class UsuarioCreate(BaseModel):
     
     @validator('login')
     def validate_login(cls, v):
-        if len(v) < 3 or len(v) > 50:
-            raise ValueError('Login deve ter entre 3 e 50 caracteres')
+        if len(v) < 4 or len(v) > 20:
+            raise ValueError('Login deve ter entre 4 e 20 caracteres')
         if not v.replace('_', '').isalnum():
             raise ValueError('Login deve conter apenas letras, numeros e underscore')
         return v.lower().strip()
