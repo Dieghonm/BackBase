@@ -225,6 +225,7 @@ def fazer_login(
     db: Session = Depends(get_db)
 ):
     """Endpoint de login com suporte a token renewal e credenciais"""
+    
     try:
         usuario = None
         
@@ -232,7 +233,6 @@ def fazer_login(
             try:
                 user_data = get_user_from_token(dados_login.token)
                 usuario = buscar_usuario_por_id(db, user_data["user_id"])
-
                 if not usuario:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -247,7 +247,6 @@ def fazer_login(
         else:
             usuario = buscar_usuario_por_email(db, dados_login.email_ou_login) \
                       or buscar_usuario_por_login(db, dados_login.email_ou_login)
-
             if not usuario:
                 raise HTTPException(status_code=401, detail="Usuário não encontrado")
 
@@ -309,7 +308,6 @@ def listar_usuarios_endpoint(current_user: dict = Depends(get_current_user), db:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao listar usuários: {str(e)}")
     
-
 @app.post("/tempkey", response_model=dict)
 @limiter.limit(settings.rate_limit_tempkey)
 def recuperar_senha_endpoint(
