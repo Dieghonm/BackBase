@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Emails - Eden Map</title>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="showEmail('welcome')" id="btn-welcome" class="active">
+            🌿 Boas-vindas
+        </button>
+        <button onclick="showEmail('recovery')" id="btn-recovery">
+            🔐 Recuperação
+        </button>
+    </div>
+
+    <!-- EMAIL 1: BOAS-VINDAS -->
+    <div id="email-welcome" class="email-preview active">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); padding: 40px 20px;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background: rgba(42, 46, 66, 0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); overflow: hidden; max-width: 100%;">
+                        
+                        <!-- Header com Logo -->
+                        <tr>
+                            <td align="center" style="background: linear-gradient(135deg, #0a84ff 0%, #8a4aed 100%); padding: 50px 40px;">
+                                <div style="width: 200px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                    <span style="color: #ffffff; font-size: 28px; font-weight: bold; letter-spacing: 2px;">EDEN MAP</span>
+                                </div>
+                                
+                                <h1 style="margin: 20px 0 0 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
+                                    Bem-vindo! 🌿
+                                </h1>
+                            </td>
+                        </tr>
+                        
+                        <!-- Conteúdo -->
+                        <tr>
+                            <td style="padding: 50px 40px;">
+                                
+                                <p style="color: #e2e8f0; font-size: 18px; line-height: 1.8; margin: 0 0 30px 0; text-align: center;">
+                                    Olá <strong style="color: #ffffff; font-size: 20px;">João Silva</strong>,
+                                </p>
+                                
+                                <p style="color: #cbd5e0; font-size: 16px; line-height: 1.8; margin: 0 0 30px 0; text-align: center;">
+                                    É com grande satisfação que damos as boas-vindas ao <strong style="color: #8a4aed;">Eden Map</strong>! 
+                                    Sua conta foi criada com sucesso e você já pode começar a explorar todas as funcionalidades da nossa plataforma.
+                                </p>
+                                
+                                <!-- Card de Confirmação -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, rgba(10, 132, 255, 0.15) 0%, rgba(138, 74, 237, 0.15) 100%); border-radius: 16px; border: 2px solid rgba(138, 74, 237, 0.3); margin: 30px 0;">
+                                    <tr>
+                                        <td style="padding: 30px; text-align: center;">
+                                            <div style="font-size: 48px; margin-bottom: 15px;">✓</div>
+                                            <h2 style="color: #ffffff; font-size: 22px; margin: 0 0 15px 0; font-weight: 600;">
+                                                Cadastro Confirmado
+                                            </h2>
+                                            <p style="color: #cbd5e0; font-size: 15px; margin: 0 0 15px 0;">
+                                                Você está no plano:
+                                            </p>
+                                            <div style="display: inline-block; background: linear-gradient(135deg, #0a84ff 0%, #8a4aed 100%); color: #ffffff; padding: 12px 30px; border-radius: 25px; font-weight: 600; font-size: 16px;">
+                                                Teste Grátis (15 dias)
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Informações da Conta -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(26, 29, 41, 0.5); border-radius: 12px; margin: 30px 0; border: 1px solid rgba(138, 74, 237, 0.2);">
+                                    <tr>
+                                        <td style="padding: 25px;">
+                                            <h3 style="color: #ffffff; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">
+                                                📋 Informações da Conta
+                                            </h3>
+                                            <table width="100%" cellpadding="8" cellspacing="0">
+                                                <tr>
+                                                    <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Login:</td>
+                                                    <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">joaosilva</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Email:</td>
+                                                    <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">joao@example.com</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Plano:</td>
+                                                    <td style="color: #8a4aed; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">Teste Grátis (15 dias)</td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Recursos -->
+                                <div style="margin: 30px 0;">
+                                    <h3 style="color: #ffffff; font-size: 18px; margin: 0 0 20px 0; font-weight: 600; text-align: center;">
+                                        🚀 O que você pode fazer agora
+                                    </h3>
+                                    
+                                    <table width="100%" cellpadding="10" cellspacing="0">
+                                        <tr>
+                                            <td style="padding: 10px 0;">
+                                                <div style="display: flex; align-items: center;">
+                                                    <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                    <span style="color: #cbd5e0; font-size: 15px;">Acessar sua conta com seu login e senha</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0;">
+                                                <div style="display: flex; align-items: center;">
+                                                    <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                    <span style="color: #cbd5e0; font-size: 15px;">Explorar todas as funcionalidades da API</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0;">
+                                                <div style="display: flex; align-items: center;">
+                                                    <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                    <span style="color: #cbd5e0; font-size: 15px;">Gerenciar seu perfil e configurações</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 10px 0;">
+                                                <div style="display: flex; align-items: center;">
+                                                    <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                    <span style="color: #cbd5e0; font-size: 15px;">Acessar a documentação completa em /docs</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                
+                                <!-- Aviso de Segurança -->
+                                <div style="background: rgba(255, 170, 46, 0.1); border-left: 4px solid #ffaa2e; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                    <p style="color: #ffaa2e; font-size: 15px; margin: 0; line-height: 1.6;">
+                                        <strong>💡 Dica de Segurança:</strong><br>
+                                        Mantenha suas credenciais seguras e nunca compartilhe com terceiros. Seu token de acesso é pessoal e intransferível.
+                                    </p>
+                                </div>
+                                
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background: rgba(26, 29, 41, 0.8); padding: 30px 40px; text-align: center; border-top: 1px solid rgba(138, 74, 237, 0.2);">
+                                <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0;">
+                                    <strong style="color: #ffffff;">Eden Map</strong>
+                                </p>
+                                <p style="color: #64748b; font-size: 13px; margin: 0 0 15px 0;">
+                                    © 2025 Eden Map. Todos os direitos reservados.
+                                </p>
+                                <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.6;">
+                                    Este é um email automático, não responda.<br>
+                                    Se você não criou esta conta, ignore este email.
+                                </p>
+                                <div style="margin-top: 20px;">
+                                    <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Documentação</a>
+                                    <span style="color: #475569;">•</span>
+                                    <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Suporte</a>
+                                    <span style="color: #475569;">•</span>
+                                    <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Privacidade</a>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- EMAIL 2: RECUPERAÇÃO DE SENHA -->
+    <div id="email-recovery" class="email-preview">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); padding: 40px 20px;">
+            <tr>
+                <td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background: rgba(42, 46, 66, 0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); overflow: hidden; max-width: 100%;">
+                        
+                        <!-- Header com Logo -->
+                        <tr>
+                            <td align="center" style="background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); padding: 50px 40px;">
+                                <div style="width: 200px; height: 60px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; border: 1px solid rgba(138, 74, 237, 0.3);">
+                                    <span style="color: #8a4aed; font-size: 28px; font-weight: bold; letter-spacing: 2px;">EDEN MAP</span>
+                                </div>
+                                
+                                <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                                    Seu código de recuperação de senha
+                                </h1>
+                            </td>
+                        </tr>
+                        
+                        <!-- Conteúdo -->
+                        <tr>
+                            <td style="padding: 50px 40px;">
+                                
+                                <!-- Mensagem Condicional -->
+                                <div style="background: rgba(255, 170, 46, 0.1); border-left: 4px solid #ffaa2e; padding: 20px; border-radius: 8px; margin: 0 0 30px 0;">
+                                    <p style="color: #ffaa2e; font-size: 15px; margin: 0; line-height: 1.6; text-align: center;">
+                                        <strong>Se você <span style="color: #ff6b6b;">não solicitou</span> o token, <span style="color: #ff6b6b;">basta ignorar</span> esse email.</strong>
+                                    </p>
+                                </div>
+                                
+                                <p style="color: #cbd5e0; font-size: 16px; line-height: 1.8; margin: 0 0 30px 0; text-align: center;">
+                                    Olá <strong style="color: #ffffff;">João Silva</strong>,
+                                </p>
+                                
+                                <p style="color: #cbd5e0; font-size: 16px; line-height: 1.8; margin: 0 0 40px 0; text-align: center;">
+                                    Use o código abaixo para redefinir sua senha:
+                                </p>
+                                
+                                <!-- Card do Código -->
+                                <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, rgba(10, 132, 255, 0.1) 0%, rgba(138, 74, 237, 0.1) 100%); border-radius: 16px; border: 2px dashed rgba(138, 74, 237, 0.5); margin: 0 0 30px 0;">
+                                    <tr>
+                                        <td style="padding: 40px 30px; text-align: center;">
+                                            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px;">
+                                                Seu Código
+                                            </p>
+                                            
+                                            <!-- Código de 4 Dígitos -->
+                                            <div style="display: flex; gap: 15px; justify-content: center; margin: 0 0 20px 0;">
+                                                <div style="width: 70px; height: 90px; background: rgba(26, 29, 41, 0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(138, 74, 237, 0.3);">
+                                                    <span style="color: #ffffff; font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace;">4</span>
+                                                </div>
+                                                <div style="width: 70px; height: 90px; background: rgba(26, 29, 41, 0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(138, 74, 237, 0.3);">
+                                                    <span style="color: #ffffff; font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace;">5</span>
+                                                </div>
+                                                <div style="width: 70px; height: 90px; background: rgba(26, 29, 41, 0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(138, 74, 237, 0.3);">
+                                                    <span style="color: #ffffff; font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace;">1</span>
+                                                </div>
+                                                <div style="width: 70px; height: 90px; background: rgba(26, 29, 41, 0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(138, 74, 237, 0.3);">
+                                                    <span style="color: #ffffff; font-size: 48px; font-weight: 700; font-family: 'Courier New', monospace;">0</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <p style="color: #ff6b6b; font-size: 15px; margin: 0; font-weight: 600;">
+                                                ⏱️ Expira em 15 minutos
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Instruções -->
+                                <div style="background: rgba(26, 29, 41, 0.5); border-radius: 12px; padding: 25px; margin: 0 0 30px 0; border: 1px solid rgba(138, 74, 237, 0.2);">
+                                    <h3 style="color: #ffffff; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">
+                                        📝 Como usar o código:
+                                    </h3>
+                                    <ol style="color: #cbd5e0; font-size: 15px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                                        <li style="margin-bottom: 10px;">Acesse o formulário de recuperação de senha</li>
+                                        <li style="margin-bottom: 10px;">Insira o código: <strong style="color: #ffffff;">4510</strong></li>
+                                        <li style="margin-bottom: 10px;">Defina sua nova senha</li>
+                                        <li>Faça login com suas novas credenciais</li>
+                                    </ol>
+                                </div>
+                                
+                                <!-- Aviso de Segurança -->
+                                <div style="background: rgba(255, 107, 107, 0.1); border-left: 4px solid #ff6b6b; padding: 20px; border-radius: 8px;">
+                                    <p style="color: #ff6b6b; font-size: 15px; margin: 0; line-height: 1.6;">
+                                        <strong>⚠️ Importante:</strong><br>
+                                        Nunca compartilhe este código com ninguém. A equipe do Eden Map nunca pedirá este código por email ou telefone.
+                                    </p>
+                                </div>
+                                
+                                <!-- Texto de Ajuda -->
+                                <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0; text-align: center;">
+                                    Precisa de ajuda?<br>
+                                    Entre em contato: <a href="mailto:suporte@edenmap.app" style="color: #8a4aed; text-decoration: none;">suporte@edenmap.app</a>
+                                </p>
+                                
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background: rgba(26, 29, 41, 0.8); padding: 30px 40px; text-align: center; border-top: 1px solid rgba(138, 74, 237, 0.2);">
+                                <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0;">
+                                    <strong style="color: #ffffff;">Eden Map</strong>
+                                </p>
+                                <p style="color: #64748b; font-size: 13px; margin: 0 0 15px 0;">
+                                    © 2025 Eden Map. Todos os direitos reservados.
+                                </p>
+                                <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.6;">
+                                    Este é um email automático, não responda.<br>
+                                    Se você não solicitou esta recuperação, ignore este email.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        function showEmail(emailType) {
+            // Ocultar todos os emails
+            document.querySelectorAll('.email-preview').forEach(email => {
+                email.classList.remove('active');
+            });
+            
+            // Remover classe active de todos os botões
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar email selecionado
+            document.getElementById(`email-${emailType}`).classList.add('active');
+            
+            // Ativar botão correspondente
+            document.getElementById(`btn-${emailType}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>

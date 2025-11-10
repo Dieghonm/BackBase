@@ -1,4 +1,3 @@
-
 import requests
 import logging
 from typing import Optional
@@ -99,7 +98,7 @@ class BrevoEmailService:
             True se enviado com sucesso
         """
         planos_nomes = {
-            "trial": "Teste Grátis",
+            "trial": "Teste Grátis (15 dias)",
             "mensal": "Mensal",
             "trimestral": "Trimestral", 
             "semestral": "Semestral",
@@ -109,229 +108,181 @@ class BrevoEmailService:
         
         plano_nome = planos_nomes.get(plan.lower(), plan)
         
-        assunto = f"🎉 Bem-vindo ao Eden Map, {login}!"
+        assunto = f"Bem-vindo ao Eden Map, {login}! 🌿"
         
         corpo_html = f"""
-        <html>
-            <head>
-                <style>
-                    body {{
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        background-color: #f4f7fa;
-                        margin: 0;
-                        padding: 20px;
-                    }}
-                    .container {{
-                        max-width: 600px;
-                        margin: 0 auto;
-                        background-color: #ffffff;
-                        border-radius: 12px;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                        overflow: hidden;
-                    }}
-                    .header {{
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 40px 30px;
-                        text-align: center;
-                    }}
-                    .header h1 {{
-                        margin: 0;
-                        font-size: 28px;
-                        font-weight: 700;
-                    }}
-                    .header p {{
-                        margin: 10px 0 0 0;
-                        font-size: 16px;
-                        opacity: 0.9;
-                    }}
-                    .content {{
-                        padding: 40px 30px;
-                    }}
-                    .content p {{
-                        color: #333;
-                        line-height: 1.8;
-                        margin: 15px 0;
-                        font-size: 15px;
-                    }}
-                    .welcome-box {{
-                        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                        border-radius: 8px;
-                        padding: 25px;
-                        text-align: center;
-                        margin: 25px 0;
-                    }}
-                    .welcome-box h2 {{
-                        color: #667eea;
-                        margin: 0 0 15px 0;
-                        font-size: 22px;
-                    }}
-                    .plan-badge {{
-                        display: inline-block;
-                        background-color: #667eea;
-                        color: white;
-                        padding: 8px 20px;
-                        border-radius: 20px;
-                        font-weight: 600;
-                        font-size: 14px;
-                        margin-top: 10px;
-                    }}
-                    .features {{
-                        background-color: #f8f9fa;
-                        border-radius: 8px;
-                        padding: 20px;
-                        margin: 25px 0;
-                    }}
-                    .features h3 {{
-                        color: #333;
-                        margin: 0 0 15px 0;
-                        font-size: 18px;
-                    }}
-                    .feature-item {{
-                        display: flex;
-                        align-items: center;
-                        margin: 12px 0;
-                        color: #555;
-                    }}
-                    .feature-icon {{
-                        background-color: #667eea;
-                        color: white;
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 50%;
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        margin-right: 12px;
-                        font-size: 14px;
-                        flex-shrink: 0;
-                    }}
-                    .cta-button {{
-                        display: inline-block;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 15px 35px;
-                        border-radius: 6px;
-                        text-decoration: none;
-                        font-weight: 600;
-                        margin: 20px 0;
-                        transition: transform 0.2s;
-                    }}
-                    .cta-button:hover {{
-                        transform: translateY(-2px);
-                    }}
-                    .info-box {{
-                        background-color: #e3f2fd;
-                        border-left: 4px solid #2196f3;
-                        padding: 15px;
-                        margin: 20px 0;
-                        color: #0d47a1;
-                        border-radius: 4px;
-                    }}
-                    .footer {{
-                        background-color: #f8f9fa;
-                        padding: 25px;
-                        text-align: center;
-                        font-size: 13px;
-                        color: #666;
-                        border-top: 1px solid #e0e0e0;
-                    }}
-                    .footer a {{
-                        color: #667eea;
-                        text-decoration: none;
-                    }}
-                    .divider {{
-                        height: 1px;
-                        background: linear-gradient(to right, transparent, #ddd, transparent);
-                        margin: 30px 0;
-                    }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🎉 Bem-vindo ao Eden Map!</h1>
-                        <p>Sua conta foi criada com sucesso</p>
-                    </div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo ao Eden Map</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); min-height: 100vh;">
+    
+    <!-- Container Principal -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%); padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                
+                <!-- Card do Email -->
+                <table width="600" cellpadding="0" cellspacing="0" style="background: rgba(42, 46, 66, 0.95); border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); overflow: hidden; max-width: 100%;">
                     
-                    <div class="content">
-                        <p>Olá <strong>{login}</strong>,</p>
-                        
-                        <p>É com grande satisfação que damos as boas-vindas ao <strong>Eden Map</strong>! 
-                        Sua conta foi criada com sucesso e você já pode começar a explorar todas as funcionalidades da nossa plataforma.</p>
-                        
-                        <div class="welcome-box">
-                            <h2>✓ Cadastro Confirmado</h2>
-                            <p style="margin: 10px 0; color: #555;">Você está no plano:</p>
-                            <span class="plan-badge">{plano_nome}</span>
-                        </div>
-                        
-                        <div class="features">
-                            <h3>🚀 O que você pode fazer agora:</h3>
-                            
-                            <div class="feature-item">
-                                <span class="feature-icon">✓</span>
-                                <span>Acessar sua conta com seu login e senha</span>
+                    <!-- Header com Logo -->
+                    <tr>
+                        <td align="center" style="background: linear-gradient(135deg, #0a84ff 0%, #8a4aed 100%); padding: 50px 40px;">
+                            <!-- LOGO PLACEHOLDER - Substituir pela imagem real quando disponível -->
+                            <div style="width: 200px; height: 60px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                                <span style="color: #ffffff; font-size: 28px; font-weight: bold; letter-spacing: 2px;">EDEN MAP</span>
                             </div>
                             
-                            <div class="feature-item">
-                                <span class="feature-icon">✓</span>
-                                <span>Explorar todas as funcionalidades da API</span>
-                            </div>
-                            
-                            <div class="feature-item">
-                                <span class="feature-icon">✓</span>
-                                <span>Gerenciar seu perfil e configurações</span>
-                            </div>
-                            
-                            <div class="feature-item">
-                                <span class="feature-icon">✓</span>
-                                <span>Acessar a documentação completa em /docs</span>
-                            </div>
-                        </div>
-                        
-                        <div style="text-align: center;">
-                            <a href="https://seu-app.onrender.com/docs" class="cta-button">
-                                📚 Explorar Documentação
-                            </a>
-                        </div>
-                        
-                        <div class="divider"></div>
-                        
-                        <div class="info-box">
-                            <strong>💡 Dica:</strong> Seu token de acesso tem validade baseada no seu plano. 
-                            Mantenha suas credenciais seguras e nunca compartilhe com terceiros.
-                        </div>
-                        
-                        <p><strong>Informações da sua conta:</strong></p>
-                        <ul style="color: #555; line-height: 1.8;">
-                            <li><strong>Login:</strong> {login}</li>
-                            <li><strong>Email:</strong> {email}</li>
-                            <li><strong>Plano:</strong> {plano_nome}</li>
-                        </ul>
-                        
-                        <p style="margin-top: 30px;">Se você tiver alguma dúvida ou precisar de ajuda, nossa equipe está sempre disponível!</p>
-                        
-                        <p style="color: #888; font-size: 14px; margin-top: 30px;">
-                            Não foi você que criou esta conta? Por favor, ignore este email ou entre em contato conosco imediatamente.
-                        </p>
-                    </div>
+                            <h1 style="margin: 20px 0 0 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">
+                                Bem-vindo! 🌿
+                            </h1>
+                        </td>
+                    </tr>
                     
-                    <div class="footer">
-                        <p><strong>Eden Map API</strong></p>
-                        <p>© 2025 Eden Map. Todos os direitos reservados.</p>
-                        <p style="margin-top: 10px;">
-                            <a href="#">Documentação</a> • 
-                            <a href="#">Suporte</a> • 
-                            <a href="#">Política de Privacidade</a>
-                        </p>
-                        <p style="margin-top: 15px; color: #999;">
-                            Este é um email automático, não responda.
-                        </p>
-                    </div>
-                </div>
-            </body>
-        </html>
+                    <!-- Conteúdo -->
+                    <tr>
+                        <td style="padding: 50px 40px;">
+                            
+                            <!-- Mensagem de Boas-vindas -->
+                            <p style="color: #e2e8f0; font-size: 18px; line-height: 1.8; margin: 0 0 30px 0; text-align: center;">
+                                Olá <strong style="color: #ffffff; font-size: 20px;">{login}</strong>,
+                            </p>
+                            
+                            <p style="color: #cbd5e0; font-size: 16px; line-height: 1.8; margin: 0 0 30px 0; text-align: center;">
+                                É com grande satisfação que damos as boas-vindas ao <strong style="color: #8a4aed;">Eden Map</strong>! 
+                                Sua conta foi criada com sucesso e você já pode começar a explorar todas as funcionalidades da nossa plataforma.
+                            </p>
+                            
+                            <!-- Card de Confirmação -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, rgba(10, 132, 255, 0.15) 0%, rgba(138, 74, 237, 0.15) 100%); border-radius: 16px; border: 2px solid rgba(138, 74, 237, 0.3); margin: 30px 0;">
+                                <tr>
+                                    <td style="padding: 30px; text-align: center;">
+                                        <div style="font-size: 48px; margin-bottom: 15px;">✓</div>
+                                        <h2 style="color: #ffffff; font-size: 22px; margin: 0 0 15px 0; font-weight: 600;">
+                                            Cadastro Confirmado
+                                        </h2>
+                                        <p style="color: #cbd5e0; font-size: 15px; margin: 0 0 15px 0;">
+                                            Você está no plano:
+                                        </p>
+                                        <div style="display: inline-block; background: linear-gradient(135deg, #0a84ff 0%, #8a4aed 100%); color: #ffffff; padding: 12px 30px; border-radius: 25px; font-weight: 600; font-size: 16px;">
+                                            {plano_nome}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Informações da Conta -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(26, 29, 41, 0.5); border-radius: 12px; margin: 30px 0; border: 1px solid rgba(138, 74, 237, 0.2);">
+                                <tr>
+                                    <td style="padding: 25px;">
+                                        <h3 style="color: #ffffff; font-size: 18px; margin: 0 0 20px 0; font-weight: 600;">
+                                            📋 Informações da Conta
+                                        </h3>
+                                        <table width="100%" cellpadding="8" cellspacing="0">
+                                            <tr>
+                                                <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Login:</td>
+                                                <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{login}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Email:</td>
+                                                <td style="color: #ffffff; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{email}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="color: #94a3b8; font-size: 14px; padding: 8px 0;">Plano:</td>
+                                                <td style="color: #8a4aed; font-size: 14px; font-weight: 600; text-align: right; padding: 8px 0;">{plano_nome}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Recursos -->
+                            <div style="margin: 30px 0;">
+                                <h3 style="color: #ffffff; font-size: 18px; margin: 0 0 20px 0; font-weight: 600; text-align: center;">
+                                    🚀 O que você pode fazer agora
+                                </h3>
+                                
+                                <table width="100%" cellpadding="10" cellspacing="0">
+                                    <tr>
+                                        <td style="padding: 10px 0;">
+                                            <div style="display: flex; align-items: center;">
+                                                <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                <span style="color: #cbd5e0; font-size: 15px;">Acessar sua conta com seu login e senha</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 0;">
+                                            <div style="display: flex; align-items: center;">
+                                                <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                <span style="color: #cbd5e0; font-size: 15px;">Explorar todas as funcionalidades da API</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 0;">
+                                            <div style="display: flex; align-items: center;">
+                                                <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                <span style="color: #cbd5e0; font-size: 15px;">Gerenciar seu perfil e configurações</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 10px 0;">
+                                            <div style="display: flex; align-items: center;">
+                                                <span style="color: #0a84ff; font-size: 20px; margin-right: 12px;">✓</span>
+                                                <span style="color: #cbd5e0; font-size: 15px;">Acessar a documentação completa em /docs</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Aviso de Segurança -->
+                            <div style="background: rgba(255, 170, 46, 0.1); border-left: 4px solid #ffaa2e; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                                <p style="color: #ffaa2e; font-size: 15px; margin: 0; line-height: 1.6;">
+                                    <strong>💡 Dica de Segurança:</strong><br>
+                                    Mantenha suas credenciais seguras e nunca compartilhe com terceiros. Seu token de acesso é pessoal e intransferível.
+                                </p>
+                            </div>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background: rgba(26, 29, 41, 0.8); padding: 30px 40px; text-align: center; border-top: 1px solid rgba(138, 74, 237, 0.2);">
+                            <p style="color: #94a3b8; font-size: 14px; margin: 0 0 10px 0;">
+                                <strong style="color: #ffffff;">Eden Map</strong>
+                            </p>
+                            <p style="color: #64748b; font-size: 13px; margin: 0 0 15px 0;">
+                                © 2025 Eden Map. Todos os direitos reservados.
+                            </p>
+                            <p style="color: #64748b; font-size: 12px; margin: 0; line-height: 1.6;">
+                                Este é um email automático, não responda.<br>
+                                Se você não criou esta conta, ignore este email.
+                            </p>
+                            <div style="margin-top: 20px;">
+                                <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Documentação</a>
+                                <span style="color: #475569;">•</span>
+                                <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Suporte</a>
+                                <span style="color: #475569;">•</span>
+                                <a href="#" style="color: #8a4aed; text-decoration: none; font-size: 13px; margin: 0 10px;">Privacidade</a>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                </table>
+                
+            </td>
+        </tr>
+    </table>
+    
+</body>
+</html>
         """
         
         return self.enviar_email_simples(
@@ -359,121 +310,257 @@ class BrevoEmailService:
         """
         assunto = "🔐 Seu Código de Recuperação de Senha - Eden Map"
         
+        # Separar os 4 dígitos para exibir em boxes individuais
+        digito1, digito2, digito3, digito4 = list(tempkey)
+        
         corpo_html = f"""
-        <html>
+            <!DOCTYPE html>
+            <html lang="pt-BR">
             <head>
-                <style>
-                    body {{
-                        font-family: Arial, sans-serif;
-                        background-color: #f4f4f4;
-                        margin: 0;
-                        padding: 20px;
-                    }}
-                    .container {{
-                        max-width: 600px;
-                        margin: 0 auto;
-                        background-color: #ffffff;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                        overflow: hidden;
-                    }}
-                    .header {{
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 30px;
-                        text-align: center;
-                    }}
-                    .header h1 {{
-                        margin: 0;
-                        font-size: 24px;
-                    }}
-                    .content {{
-                        padding: 30px;
-                    }}
-                    .content p {{
-                        color: #333;
-                        line-height: 1.6;
-                        margin: 10px 0;
-                    }}
-                    .code-box {{
-                        background-color: #f8f9fa;
-                        border: 2px dashed #667eea;
-                        border-radius: 6px;
-                        padding: 20px;
-                        text-align: center;
-                        margin: 20px 0;
-                    }}
-                    .code {{
-                        font-size: 36px;
-                        font-weight: bold;
-                        color: #667eea;
-                        letter-spacing: 5px;
-                        font-family: 'Courier New', monospace;
-                    }}
-                    .validity {{
-                        color: #e74c3c;
-                        font-size: 14px;
-                        margin-top: 10px;
-                    }}
-                    .footer {{
-                        background-color: #f8f9fa;
-                        padding: 15px;
-                        text-align: center;
-                        font-size: 12px;
-                        color: #666;
-                        border-top: 1px solid #ddd;
-                    }}
-                    .warning {{
-                        background-color: #fff3cd;
-                        border-left: 4px solid #ffc107;
-                        padding: 10px;
-                        margin: 15px 0;
-                        color: #856404;
-                    }}
-                </style>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Eden Map - Recuperação de Senha</title>
+            <style>
+                * {{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                }}
+
+                body {{
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #212224 0%, #2a1833 50%, #212224 100%);
+                color: #fff;
+                padding: 40px 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                }}
+
+                .email-recovery {{
+                width: 100%;
+                max-width: 600px;
+                background: rgba(42, 46, 66, 0.95);
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                overflow: hidden;
+                }}
+                .header {{
+                background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+                padding: 50px 40px;
+                text-align: center;
+                }}
+
+                .logo-box {{
+                width: 200px;
+                height: 60px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0 16px 20px 200px;
+                }}
+
+                .logo-box p {{
+                font-size: 28px;
+                font-weight: 700;
+                margin-right: 50px;
+                }}
+
+                .header h1 {{
+                font-size: 28px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+                }}
+
+                .content {{
+                padding: 50px 40px;
+                }}
+
+                .alert {{
+                background: rgba(255, 170, 46, 0.1);
+                border-left: 4px solid #ffaa2e;
+                border-radius: 8px;
+                padding: 20px;
+                text-align: center;
+                margin-bottom: 30px;
+                color: #ffaa2e;
+                font-size: 15px;
+                line-height: 1.6;
+                }}
+
+                .greeting,
+                .instructions {{
+                color: #cbd5e0;
+                font-size: 16px;
+                line-height: 1.8;
+                text-align: center;
+                margin-bottom: 30px;
+                }}
+
+                .instructions {{
+                margin-bottom: 40px;
+                }}
+
+                .code-card {{
+                background: linear-gradient(-145deg, #1d1e20 0%, #746d7740 38%, #ffffff3b 50%, #746d7740 62%, #1d1e20 100%);
+                border-radius: 16px;
+                padding: 40px 30px;
+                text-align: center;
+                margin-bottom: 30px;
+                }}
+
+                .code-label {{
+                color: #94a3b8;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 15px;
+                }}
+
+                .code-boxes {{
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin-bottom: 20px;
+                }}
+
+                .code-box {{
+                width: 70px;
+                height: 90px;
+                background: #d9d9d98c;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                }}
+
+                .code-box span {{
+                color: #ffffff;
+                font-size: 48px;
+                font-weight: 700;
+                font-family: 'Courier New', monospace;
+                }}
+
+                .expire {{
+                color: #ff6b6b;
+                font-size: 15px;
+                font-weight: 600;
+                }}
+
+                .how-to {{
+                background: rgba(26, 29, 41, 0.5);
+                border-radius: 12px;
+                border: 1px solid rgba(138, 74, 237, 0.2);
+                padding: 25px;
+                margin-bottom: 30px;
+                }}
+
+                .how-to h3 {{
+                color: #ffffff;
+                font-size: 18px;
+                margin-bottom: 20px;
+                font-weight: 600;
+                }}
+
+                .how-to ol {{
+                color: #cbd5e0;
+                font-size: 15px;
+                line-height: 1.8;
+                padding-left: 20px;
+                }}
+
+                .warning {{
+                background: rgba(255, 107, 107, 0.1);
+                border-left: 4px solid #ff6b6b;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 30px;
+                color: #ff6b6b;
+                font-size: 15px;
+                line-height: 1.6;
+                }}
+
+                .help {{
+                color: #94a3b8;
+                font-size: 14px;
+                text-align: center;
+                line-height: 1.6;
+                }}
+
+                .help a {{
+                color: #8a4aed;
+                text-decoration: none;
+                }}
+
+                .help a:hover {{
+                text-decoration: underline;
+                }}
+
+                .footer {{
+                background: rgba(26, 29, 41, 0.8);
+                border-top: 1px solid rgba(138, 74, 237, 0.2);
+                padding: 30px 40px;
+                text-align: center;
+                font-size: 13px;
+                color: #64748b;
+                }}
+
+                .footer strong {{
+                color: #ffffff;
+                }}
+
+                .footer p {{
+                margin-bottom: 10px;
+                }}
+            </style>
             </head>
             <body>
-                <div class="container">
-                    <div class="header">
-                        <h1>🔐 Eden Map</h1>
-                        <p>Recuperação de Senha</p>
-                    </div>
-                    
-                    <div class="content">
-                        <p>Olá <strong>{login}</strong>,</p>
-                        
-                        <p>Você solicitou uma recuperação de senha. Use o código abaixo para redefinir sua senha:</p>
-                        
-                        <div class="code-box">
-                            <div class="code">{tempkey}</div>
-                            <div class="validity">✓ Válido por 15 minutos</div>
-                        </div>
-                        
-                        <div class="warning">
-                            <strong>⚠️ Importante:</strong> Nunca compartilhe este código com ninguém. 
-                            A Eden Map API nunca pedirá este código por email ou telefone.
-                        </div>
-                        
-                        <p><strong>Como usar:</strong></p>
-                        <ol>
-                            <li>Acesse o formulário de recuperação de senha</li>
-                            <li>Insira o código: <strong>{tempkey}</strong></li>
-                            <li>Defina sua nova senha</li>
-                            <li>Faça login com suas novas credenciais</li>
-                        </ol>
-                        
-                        <p>Se você não solicitou esta recuperação de senha, ignore este email.</p>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>© 2025 Eden Map API. Todos os direitos reservados.</p>
-                        <p>Este é um email automático, não responda.</p>
-                    </div>
+            <div id="email-recovery" class="email-recovery">
+                <div class="header">
+                <img src="https://raw.githubusercontent.com/Dieghonm/Eden-Map/refs/heads/main/assets/Logo2.png" alt="Logo Eden Map">
+                <h1>Seu código de recuperação de senha</h1>
                 </div>
+
+                <div class="content">
+                <div class="alert">
+                    <strong>Se você <span style="color:#ff6b6b;">não solicitou</span> o token, <span style="color:#ff6b6b;">basta ignorar</span> esse email.</strong>
+                </div>
+
+                <p class="greeting">Olá <strong style="color:#fff;">{login}</strong>,</p>
+                <p class="instructions">Use o código abaixo para redefinir sua senha:</p>
+
+                <div class="code-card">
+                    <p class="code-label">Seu Código</p>
+                    <div class="code-boxes">
+                    <div class="code-box"><span>{digito1}</span></div>
+                    <div class="code-box"><span>{digito2}</span></div>
+                    <div class="code-box"><span>{digito3}</span></div>
+                    <div class="code-box"><span>{digito4}</span></div>
+                    </div>
+                    <p class="expire">⏱️ Expira em 15 minutos</p>
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ Importante:</strong><br>
+                    Nunca compartilhe este código com ninguém. A equipe do Eden Map nunca pedirá este código por email ou telefone.
+                </div>
+
+                <p class="help">
+                    Precisa de ajuda?<br>
+                    Entre em contato: <a href="mailto:duo.estudio.tech@gmail.com">duo.estudio.tech@gmail.com</a>
+                </p>
+                </div>
+
+                <div class="footer">
+                <p><strong>Eden Map</strong></p>
+                <p>© 2025 Eden Map. Todos os direitos reservados.</p>
+                <p>Este é um email automático, não responda.<br>Se você não solicitou esta recuperação, ignore este email.</p>
+                </div>
+            </div>
             </body>
-        </html>
-        """
-        
+            </html>
+                    """
+                    
         return self.enviar_email_simples(
             destinatario=email,
             assunto=assunto,
@@ -494,4 +581,3 @@ def get_email_service() -> Optional[BrevoEmailService]:
         return None
     
     return BrevoEmailService(api_key)
-
