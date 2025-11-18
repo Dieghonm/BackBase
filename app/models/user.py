@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, JSON
 from datetime import datetime
 from ..database.connection import Base
 
@@ -15,3 +15,8 @@ class Usuario(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     temp_senha = Column(String, nullable=True)
     temp_senha_expira = Column(DateTime, nullable=True)
+    desejo_nome = Column(String, nullable=True)
+    desejo_descricao = Column(String, nullable=True)
+    sentimentos_selecionados = Column(JSON, nullable=True)
+    caminho_selecionado = Column(String, nullable=True)
+    teste_resultados = Column(JSON, nullable=True)
