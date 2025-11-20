@@ -8,6 +8,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from .schemas.schemas import ProgressoUpdate
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -368,7 +369,10 @@ def atualizar_dados_starting(
 # /me - informações do usuário autenticado
 # -----------------------------
 @app.get("/me", response_model=dict)
-def get_current_user_info(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_current_user_info(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """Retorna informações completas do usuário autenticado"""
     try:
         usuario = buscar_usuario_por_id(db, current_user["user_id"])
@@ -384,18 +388,171 @@ def get_current_user_info(current_user: dict = Depends(get_current_user), db: Se
             "token_duration": obter_duracao_plano(usuario),
             "expires": calcular_dias_restantes(usuario),
             "created_at": usuario.created_at,
-            # STARTING
+            # Starting
             "desejo_nome": usuario.desejo_nome,
             "desejo_descricao": usuario.desejo_descricao,
             "sentimentos_selecionados": usuario.sentimentos_selecionados,
             "caminho_selecionado": usuario.caminho_selecionado,
             "teste_resultados": usuario.teste_resultados,
+            # ✨ PROGRESSO (CAMPOS SEPARADOS)
+            "semana_atual": usuario.semana_atual or 1,
+            "dia_atual": usuario.dia_atual or 1,
+            "progresso_atualizado_em": usuario.progresso_atualizado_em,
         }
     except HTTPException:
         raise
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Erro ao buscar usuário: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao buscar usuário: {str(e)}"
+        )
+
+@app.get("/me/progresso", response_model=dict)
+def obter_progresso(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retorna o progresso atual do usuário na jornada.
+    Usa campos separados: semana_atual, dia_atual, progresso_atualizado_em
+    """
+    try:
+        usuario = buscar_usuario_por_id(db, current_user["user_id"])
+        validar_usuario_existente(usuario)
+        
+        return {
+            "sucesso": True,
+            "progresso": {
+                "semana_atual": usuario.semana_atual or 1,
+                "dia_atual": usuario.dia_atual or 1,
+                "progresso_atualizado_em": usuario.progresso_atualizado_em.isoformat() if usuario.progresso_atualizado_em else None,
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao obter progresso: {str(e)}"
+        )
+
+
+@app.put("/me/progresso", response_model=dict)
+def atualizar_progresso(
+    dados: ProgressoUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Atualiza o progresso do usuário na jornada.
+    Atualiza campos individuais: semana_atual e/ou dia_atual
+    """
+    try:
+        usuario = buscar_usuario_por_id(db, current_user["user_id"])
+        validar_usuario_existente(usuario)
+        
+        # Atualiza campos fornecidos
+        campos_atualizados = {}
+        
+        if dados.semana_atual is not None:
+            campos_atualizados["semana_atual"] = dados.semana_atual
+        
+        if dados.dia_atual is not None:
+            campos_atualizados["dia_atual"] = dados.dia_atual
+        
+        # Sempre atualiza timestamp
+        campos_atualizados["progresso_atualizado_em"] = datetime.utcnow()
+        
+        # Atualiza no banco
+        usuario_atualizado = atualizar_usuario(db, usuario.id, campos_atualizados)
+        
+        return {
+            "sucesso": True,
+            "message": "Progresso atualizado com sucesso",
+            "progresso": {
+                "semana_atual": usuario_atualizado.semana_atual,
+                "dia_atual": usuario_atualizado.dia_atual,
+                "progresso_atualizado_em": usuario_atualizado.progresso_atualizado_em.isoformat() if usuario_atualizado.progresso_atualizado_em else None,
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao atualizar progresso: {str(e)}"
+        )
+
+
+@app.post("/me/progresso/avancar", response_model=dict)
+def avancar_dia(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Avança automaticamente para o próximo dia/semana.
+    Semana 1-12, Dia 1-7.
+    """
+    try:
+        usuario = buscar_usuario_por_id(db, current_user["user_id"])
+        validar_usuario_existente(usuario)
+        
+        semana = usuario.semana_atual or 1
+        dia = usuario.dia_atual or 1
+        
+        # Lógica de avanço
+        if dia < 7:
+            dia += 1
+        elif semana < 12:
+            semana += 1
+            dia = 1
+        else:
+            # Jornada completa
+            return {
+                "sucesso": False,
+                "message": "Jornada completa! Parabéns por concluir todas as 12 semanas!",
+                "progresso": {
+                    "semana_atual": semana,
+                    "dia_atual": dia,
+                    "progresso_atualizado_em": usuario.progresso_atualizado_em.isoformat() if usuario.progresso_atualizado_em else None,
+                }
+            }
+        
+        # Atualiza no banco
+        campos_atualizados = {
+            "semana_atual": semana,
+            "dia_atual": dia,
+            "progresso_atualizado_em": datetime.utcnow()
+        }
+        
+        usuario_atualizado = atualizar_usuario(db, usuario.id, campos_atualizados)
+        
+        return {
+            "sucesso": True,
+            "message": f"Avançado para Semana {semana}, Dia {dia}",
+            "progresso": {
+                "semana_atual": usuario_atualizado.semana_atual,
+                "dia_atual": usuario_atualizado.dia_atual,
+                "progresso_atualizado_em": usuario_atualizado.progresso_atualizado_em.isoformat() if usuario_atualizado.progresso_atualizado_em else None,
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao avançar progresso: {str(e)}"
+        )
+
 
 # -----------------------------
 # Listar usuários (apenas admins/testers)

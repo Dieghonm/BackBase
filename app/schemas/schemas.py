@@ -43,7 +43,6 @@ class UsuarioCreate(BaseModel):
         return v
 
 
-# ✨ NOVO SCHEMA PARA ATUALIZAR DADOS DO STARTING
 class StartingDataUpdate(BaseModel):
     """Schema para atualizar dados da jornada Starting"""
     desejo_nome: Optional[str] = None
@@ -139,26 +138,6 @@ class LoginRequest(BaseModel):
         raise ValueError('Forneca TOKEN ou EMAIL SENHA ou EMAIL TEMPKEY ou EMAIL TEMPKEY NEW_PASSWORD')
 
 
-class UsuarioResponse(BaseModel):
-    id: int
-    login: str
-    email: str
-    tag: str
-    plan: Optional[str]
-    plan_date: Optional[datetime]
-    created_at: datetime
-    
-    # ✨ NOVOS CAMPOS NA RESPOSTA
-    desejo_nome: Optional[str] = None
-    desejo_descricao: Optional[str] = None
-    sentimentos_selecionados: Optional[List[int]] = None
-    caminho_selecionado: Optional[str] = None
-    teste_resultados: Optional[Dict[str, float]] = None
-
-    class Config:
-        from_attributes = True
-
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
@@ -238,3 +217,48 @@ class TempKeyResponse(BaseModel):
     email_sent: bool = False
     expires_in: Optional[str] = None
     warning: Optional[str] = None
+
+
+class ProgressoUpdate(BaseModel):
+    """Schema para atualizar progresso (campos separados)"""
+    semana_atual: Optional[int] = None
+    dia_atual: Optional[int] = None
+    
+    @validator('semana_atual')
+    def validate_semana(cls, v):
+        if v and not 1 <= v <= 12:
+            raise ValueError('Semana deve estar entre 1 e 12')
+        return v
+    
+    @validator('dia_atual')
+    def validate_dia(cls, v):
+        if v and not 1 <= v <= 7:
+            raise ValueError('Dia deve estar entre 1 e 7')
+        return v
+
+
+class UsuarioResponse(BaseModel):
+    id: int
+    login: str
+    email: str
+    tag: str
+    plan: Optional[str]
+    plan_date: Optional[datetime]
+    created_at: datetime
+    
+    # Starting
+    desejo_nome: Optional[str] = None
+    desejo_descricao: Optional[str] = None
+    sentimentos_selecionados: Optional[List[int]] = None
+    caminho_selecionado: Optional[str] = None
+    teste_resultados: Optional[Dict[str, float]] = None
+    
+    # ✨ PROGRESSO (CAMPOS SEPARADOS)
+    semana_atual: int = 1
+    dia_atual: int = 1
+    progresso_atualizado_em: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+

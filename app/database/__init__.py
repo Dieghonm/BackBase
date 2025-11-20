@@ -19,7 +19,6 @@ def criar_usuarios_iniciais():
         {"login": "dieghonm", "email": "dieghonm@gmail.com", "tag": "admin", "senha": "Admin123@"},
         {"login": "cavamaga", "email": "cava.maga@gmail.com", "tag": "admin", "senha": "Admin123@"},
         {"login": "tiaguetevital", "email": "tiagovital999@gmail.com", "tag": "admin", "senha": "Admin123@"},
-        {"login": "Pietro", "email": "tester@gmail.com", "tag": "tester", "senha": "Tester123@"},
     ]
     
     db = SessionLocal()

@@ -15,8 +15,15 @@ class Usuario(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     temp_senha = Column(String, nullable=True)
     temp_senha_expira = Column(DateTime, nullable=True)
+    
+    # Campos do Starting
     desejo_nome = Column(String, nullable=True)
     desejo_descricao = Column(String, nullable=True)
     sentimentos_selecionados = Column(JSON, nullable=True)
     caminho_selecionado = Column(String, nullable=True)
     teste_resultados = Column(JSON, nullable=True)
+    
+    # ✨ NOVOS CAMPOS DE PROGRESSO
+    semana_atual = Column(Integer, default=1, nullable=False)
+    dia_atual = Column(Integer, default=1, nullable=False)
+    progresso_atualizado_em = Column(DateTime, nullable=True)
